@@ -1,36 +1,24 @@
 ---
-import { getCollection } from 'astro:content';
+import { getTagCounts, getPublishedPosts, tagPath } from '../../lib/posts';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
-const posts = await getCollection('blog', ({ data }) => data.draft !== true);
-
-// 统计每个标签的文章数
-const tagCounts = new Map<string, number>();
-for (const post of posts) {
-  for (const tag of post.data.tags) {
-    tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
-  }
-}
-
-// 按文章数降序，同数按标签名排序，保证顺序稳定
-const tags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'zh'));
-
-const maxCount = tags.length > 0 ? Math.max(...tags.map(([, c]) => c)) : 1;
+const [tags, posts] = await Promise.all([getTagCounts(), getPublishedPosts()]);
+const maxCount = tags.size > 0 ? Math.max(...tags.values()) : 1;
 ---
 
 <BaseLayout title="标签" description="按标签浏览梦澄博客的全部文章。">
   <div class="container">
     <header class="tags__header">
       <h1 class="tags__title">标签</h1>
-      <p class="tags__subtitle">共 {tags.length} 个标签 · {posts.length} 篇文章</p>
+      <p class="tags__subtitle">共 {tags.size} 个标签 · {posts.length} 篇文章</p>
     </header>
 
     {
-      tags.length > 0 ? (
+      tags.size > 0 ? (
         <div class="tags__cloud">
-          {tags.map(([tag, count]) => (
+          {[...tags].map(([tag, count]) => (
             <a
-              href={`/tags/${encodeURIComponent(tag)}/`}
+              href={tagPath(tag)}
               class="tag-cloud__item"
               style={`--weight: ${0.85 + (count / maxCount) * 0.55};`}
             >

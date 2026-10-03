@@ -1,32 +1,28 @@
 ---
-import { getCollection } from 'astro:content';
+import type { Post } from '../../lib/posts';
+import { getPublishedPosts, getTagCounts } from '../../lib/posts';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PostCard from '../../components/PostCard.astro';
 import TagPill from '../../components/TagPill.astro';
 
 export async function getStaticPaths() {
-  const posts = await getCollection('blog', ({ data }) => data.draft !== true);
+  const [posts, tagCounts] = await Promise.all([getPublishedPosts(), getTagCounts()]);
 
-  const tags = new Set<string>();
-  for (const post of posts) {
-    for (const tag of post.data.tags) tags.add(tag);
-  }
-
-  return [...tags].map((tag) => ({
-    // 路由参数必须是已编码的，中文标签才能正确匹配
+  return [...tagCounts.keys()].map((tag) => ({
+    // params 传原始值即可，Astro 会自行编码。
+    // 这里若再手动 encodeURIComponent 会造成双重编码，导致路径匹配不上。
     params: { tag },
-    props: {
-      posts: posts
-        .filter((post) => post.data.tags.includes(tag))
-        .sort((a, b) => b.data.date.getTime() - a.data.date.getTime()),
-    },
+    props: { posts: posts.filter((post) => post.data.tags.includes(tag)) },
   }));
 }
 
-const { posts } = Astro.props;
-const tag = Astro.params.tag ?? '';
-// Astro.params 里的值是解码后的，直接用于展示
-const tagName = decodeURIComponent(tag);
+interface Props {
+  posts: Post[];
+}
+
+const { posts } = Astro.props satisfies Props;
+// Astro.params 已是解码后的值，直接用于展示
+const tagName = Astro.params.tag ?? '';
 ---
 
 <BaseLayout title={`标签：${tagName}`} description={`梦澄博客中标签为「${tagName}」的文章。`}>

@@ -1,4 +1,6 @@
 ---
+import { tagPath } from '../lib/posts';
+
 export interface Props {
   tag: string;
   count?: number;
@@ -6,13 +8,15 @@ export interface Props {
   active?: boolean;
 }
 
-const { tag, count, active = false } = Astro.props;
+const { tag, count, active = false } = Astro.props satisfies Props;
+
+const label = count !== undefined ? `标签：${tag}，共 ${count} 篇文章` : `标签：${tag}`;
 ---
 
 <a
-  href={`/tags/${encodeURIComponent(tag)}/`}
+  href={tagPath(tag)}
   class:list={['tag-pill', { 'is-active': active }]}
-  aria-label={count !== undefined ? `标签：${tag}，共 ${count} 篇文章` : `标签：${tag}`}
+  aria-label={label}
 >
   <span>{tag}</span>
   {count !== undefined && <span class="tag-pill__count">{count}</span>}

@@ -1,37 +1,28 @@
 ---
 import type { CollectionEntry } from 'astro:content';
 import TagPill from './TagPill.astro';
+import { formatDateShort, toISO } from '../lib/format';
 
 export interface Props {
   post: CollectionEntry<'blog'>;
-  /** 是否显示文章描述（首页卡片显示，列表页可省略） */
-  showDescription?: boolean;
 }
 
-const { post, showDescription = true } = Astro.props;
+const { post } = Astro.props;
 const { title, description, date, tags, pinned } = post.data;
-
-const href = `/blog/${post.id}/`;
-const dateISO = date.toISOString();
-const dateText = new Intl.DateTimeFormat('zh-CN', {
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-}).format(date);
 ---
 
 <article class="post-card card card-hover">
   <div class="post-card__body">
     <div class="post-card__meta">
-      <time datetime={dateISO}>{dateText}</time>
+      <time datetime={toISO(date)}>{formatDateShort(date)}</time>
       {pinned && <span class="post-card__badge">置顶</span>}
     </div>
 
     <h3 class="post-card__title">
-      <a href={href}>{title}</a>
+      <a href={`/blog/${post.id}/`}>{title}</a>
     </h3>
 
-    {showDescription && description && <p class="post-card__desc">{description}</p>}
+    {description && <p class="post-card__desc">{description}</p>}
 
     {
       tags.length > 0 && (

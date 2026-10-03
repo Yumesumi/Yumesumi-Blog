@@ -1,7 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
-import { relativeBase, BUILD_BASE } from './src/utils/relative-base.js';
+import { relativeBase } from './src/plugins/relative-base.ts';
 
 /**
  * 站点地址与 base 前缀

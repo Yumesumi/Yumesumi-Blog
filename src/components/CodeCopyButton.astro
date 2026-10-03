@@ -52,7 +52,14 @@
       }
     }
 
-    // 降级：execCommand 在非安全上下文下仍可用
+    // 降级方案。
+    //
+    // 为什么要保留：navigator.clipboard 只在安全上下文（HTTPS / localhost）
+    // 可用。若 SSL 配置有误导致站点走 HTTP，主 API 会直接不可用，
+    // 此时 execCommand 是唯一还能复制的方式。
+    //
+    // 它虽已被标记废弃，但浏览器仍普遍支持，且没有等价替代 API，
+    // 所以这里刻意保留。astro check 报的 ts(6387) 弃用提示是预期的。
     try {
       const ta = document.createElement('textarea');
       ta.value = text;

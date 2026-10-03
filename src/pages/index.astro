@@ -1,12 +1,9 @@
 ---
-import { getCollection } from 'astro:content';
+import { getPublishedPostsPinnedFirst } from '../lib/posts';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PostCard from '../components/PostCard.astro';
 
-const posts = (await getCollection('blog', ({ data }) => data.draft !== true))
-  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
-  // 置顶的排在最前，其余保持日期倒序
-  .sort((a, b) => Number(b.data.pinned) - Number(a.data.pinned));
+const posts = await getPublishedPostsPinnedFirst();
 ---
 
 <BaseLayout title="梦澄博客" description="梦澄的个人博客，记录技术笔记、阅读与思考。">

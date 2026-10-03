@@ -1,38 +1,46 @@
 ---
-import { getCollection, render } from 'astro:content';
+import { render } from 'astro:content';
+import type { Post } from '../../lib/posts';
+import { getPublishedPosts } from '../../lib/posts';
 import PostLayout from '../../layouts/PostLayout.astro';
 
 export async function getStaticPaths() {
   // 草稿不生成页面：静态构建不知道你的意图，draft 只是一个字段，
-  // 必须显式过滤，否则草稿会真的发布出去。
-  const posts = (await getCollection('blog', ({ data }) => data.draft !== true)).sort(
-    (a, b) => b.data.date.getTime() - a.data.date.getTime(),
-  );
+  // 不显式过滤的话草稿会真的发布出去。
+  const posts = await getPublishedPosts();
 
-  return posts.map((post, index) => {
-    // 列表是日期倒序，所以「上一篇」是数组里的下一条
-    const newer = posts[index - 1];
-    const older = posts[index + 1];
-
-    return {
-      params: { slug: post.id },
-      props: {
-        post,
-        prevPost: newer,
-        nextPost: older,
-      },
-    };
-  });
+  return posts.map((post, index) => ({
+    params: { slug: post.id },
+    props: {
+      post,
+      // 列表按日期倒序，所以数组里更靠前的是更新的文章。
+      // 站在当前文章视角：更新的是「上一篇」，更旧的是「下一篇」。
+      prevPost: posts[index - 1],
+      nextPost: posts[index + 1],
+    },
+  }));
 }
 
-const { post, prevPost, nextPost } = Astro.props;
+interface Props {
+  post: Post;
+  prevPost?: Post;
+  nextPost?: Post;
+}
+
+const { post, prevPost, nextPost } = Astro.props satisfies Props;
 
 // Astro 7 用从 astro:content 导入的 render(post)，旧的 post.render() 已被移除。
-// headings 里带 slug，由 Astro 内置的 github-slugger 生成，与正文标题 id 一致，
+// headings 里的 slug 由 Astro 内置的 github-slugger 生成，与正文标题 id 一致，
 // 所以目录链接必然能跳转。
 const { Content, headings } = await render(post);
 ---
 
-<PostLayout post={post} headings={headings} prevPost={prevPost} nextPost={nextPost}>
+<PostLayout
+  post={post}
+  headings={headings}
+  body={post.body}
+  prevPost={prevPost}
+  nextPost={nextPost}
+>
   <Content />
 </PostLayout>

@@ -2,25 +2,20 @@
 import type { MarkdownHeading } from 'astro';
 
 export interface Props {
+  /** 已筛选过的标题列表（只含 depth 2 和 3），由调用方传入 */
   headings: MarkdownHeading[];
 }
 
-const { headings } = Astro.props;
-
-/**
- * 只保留 h2 和 h3。
- * h1 是文章标题（渲染在正文上方），h4 以下层级太深，对目录无价值。
- */
-const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
+const { headings } = Astro.props satisfies Props;
 ---
 
-{/* 空数组时整个侧栏不渲染 —— 短文章不该有目录 */ }
+{/* 无标题时不渲染 —— 短文章不该有目录 */}
 {
-  toc.length > 0 && (
+  headings.length > 0 && (
     <nav class="toc" aria-label="文章目录">
       <p class="toc__title">目录</p>
       <ol class="toc__list">
-        {toc.map((h) => (
+        {headings.map((h) => (
           <li class:list={['toc__item', `toc__item--h${h.depth}`]}>
             <a href={`#${h.slug}`}>{h.text}</a>
           </li>

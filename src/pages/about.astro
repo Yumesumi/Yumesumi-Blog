@@ -1,7 +1,7 @@
 ---
-import { getCollection, getEntry, render } from 'astro:content';
+import { getEntry, render } from 'astro:content';
+import { getPublishedPosts } from '../lib/posts';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import Prose from '../components/Prose.astro';
 import CodeCopyButton from '../components/CodeCopyButton.astro';
 import BackToTop from '../components/BackToTop.astro';
 
@@ -11,25 +11,22 @@ const page = await getEntry('pages', 'about');
 
 if (!page) {
   throw new Error(
-    '找不到 src/content/pages/about.md。请确认该文件存在，或检查 content.config.ts 里的 pages 集合配置。',
+    '找不到 src/content/pages/about.md。请确认该文件存在，或检查 src/content.config.ts 里 pages 集合的 base 路径。',
   );
 }
 
-// 顺便统计一下文章数，显示在侧边
-const postCount = (await getCollection('blog', ({ data }) => data.draft !== true)).length;
-
-const { Content, headings } = await render(page);
+const [{ Content }, posts] = await Promise.all([render(page), getPublishedPosts()]);
 ---
 
 <BaseLayout title={page.data.title} description={page.data.description}>
-  <div class="container container--narrow">
-    <Prose>
+  <div class="container">
+    <div class="prose">
       <Content />
-    </Prose>
+    </div>
     <CodeCopyButton />
 
     <p class="about__footnote">
-      目前共有 {postCount} 篇已发布文章 · <a href="/tags/">按标签浏览</a>
+      目前共有 {posts.length} 篇已发布文章 · <a href="/tags/">按标签浏览</a>
     </p>
   </div>
 
@@ -37,10 +34,6 @@ const { Content, headings } = await render(page);
 </BaseLayout>
 
 <style>
-  .container--narrow {
-    max-width: var(--max-width);
-  }
-
   .about__footnote {
     margin-top: var(--space-5);
     text-align: center;

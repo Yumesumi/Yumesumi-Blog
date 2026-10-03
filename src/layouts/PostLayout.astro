@@ -1,30 +1,29 @@
 ---
-import type { CollectionEntry } from 'astro:content';
 import type { MarkdownHeading } from 'astro';
+import type { Post } from '../lib/posts';
+import { estimateReadingMinutes, formatDateLong, toISO } from '../lib/format';
 import BaseLayout from './BaseLayout.astro';
 import TableOfContents from '../components/TableOfContents.astro';
 import TagPill from '../components/TagPill.astro';
 import CodeCopyButton from '../components/CodeCopyButton.astro';
-import Prose from '../components/Prose.astro';
 import BackToTop from '../components/BackToTop.astro';
 
 export interface Props {
-  post: CollectionEntry<'blog'>;
+  post: Post;
   headings: MarkdownHeading[];
-  prevPost?: CollectionEntry<'blog'>;
-  nextPost?: CollectionEntry<'blog'>;
+  /** 正文原文，用于估算阅读时长。由页面层从 collection entry 取后传入。 */
+  body?: string;
+  prevPost?: Post;
+  nextPost?: Post;
 }
 
-const { post, headings, prevPost, nextPost } = Astro.props;
+const { post, headings, body = '', prevPost, nextPost } = Astro.props satisfies Props;
 const { title, description, date, tags, pinned } = post.data;
 
-const dateText = new Intl.DateTimeFormat('zh-CN', {
-  year: 'numeric',
-  month: 'long',
-  day: 'numeric',
-}).format(date);
-
-const readingMinutes = Math.max(1, Math.round(post.body.split(/\s+/).length / 350));
+const readingMinutes = estimateReadingMinutes(body);
+// 只有 h2/h3 进目录。与 TableOfContents 的过滤规则保持一致。
+const tocItems = headings.filter((h) => h.depth === 2 || h.depth === 3);
+const hasToc = tocItems.length > 0;
 ---
 
 <BaseLayout
@@ -39,7 +38,7 @@ const readingMinutes = Math.max(1, Math.round(post.body.split(/\s+/).length / 35
     <header class="post-header">
       <h1 class="post-header__title">{title}</h1>
       <div class="post-header__meta">
-        <time datetime={date.toISOString()}>{dateText}</time>
+        <time datetime={toISO(date)}>{formatDateLong(date)}</time>
         <span aria-hidden="true">·</span>
         <span>约 {readingMinutes} 分钟阅读</span>
         {pinned && <span class="post-header__badge">置顶</span>}
@@ -58,12 +57,13 @@ const readingMinutes = Math.max(1, Math.round(post.body.split(/\s+/).length / 35
     <!--
       grid 布局：正文与 TOC 是兄弟节点，TOC 不会被注入正文内部。
       这样中文长文的行高和阅读节奏不受任何影响。
+      无目录时不渲染侧栏，正文占满宽度。
     -->
-    <div class:list={['post-grid', { 'post-grid--no-toc': headings.filter((h) => h.depth === 2 || h.depth === 3).length === 0 }]}>
+    <div class:list={['post-grid', { 'post-grid--no-toc': !hasToc }]}>
       <div class="post-grid__main">
-        <Prose>
+        <div class="prose">
           <slot />
-        </Prose>
+        </div>
         <CodeCopyButton />
 
         {
@@ -90,7 +90,7 @@ const readingMinutes = Math.max(1, Math.round(post.body.split(/\s+/).length / 35
 
       <aside class="post-grid__side">
         <div class="post-grid__sticky">
-          <TableOfContents headings={headings} />
+          <TableOfContents headings={tocItems} />
         </div>
       </aside>
     </div>
