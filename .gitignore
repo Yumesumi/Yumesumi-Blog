@@ -11,3 +11,6 @@ dist/
 .DS_Store
 .vscode/
 .idea/
+
+# 本地 AI 助手记忆目录（不部署到 Pages）
+.workbuddy/
