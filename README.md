@@ -115,11 +115,24 @@ pinned: false                 # 选填，true 时在列表置顶
 
 ### Cloudflare 侧（需要你操作）
 
-**DNS 设置 → 添加记录：**
+> 📖 **详细分步操作见 [docs/cloudflare-dns-setup.md](docs/cloudflare-dns-setup.md)**，
+> 包含每一步点哪里、常见报错怎么处理。
 
-| 类型 | 名称 | 目标 | 代理状态 |
-| --- | --- | --- | --- |
-| CNAME | `@` | `yumesumi.github.io` | 已代理（橙云） |
+简版：
+
+1. **先删掉现有的 A 记录** —— `@` 目前有一条 Spaceship 自动加的停放页 A 记录，
+   Cloudflare 不允许 A/AAAA 与 CNAME 共存，不删会报
+   `An A, AAAA, or CNAME record with that host already exists`
+2. **DNS → Records → Add record**，添加：
+
+| 类型 | 名称 | 目标 | TTL | 代理状态 |
+| --- | --- | --- | --- | --- |
+| CNAME | `@` | `yumesumi.github.io` | Auto | 已代理（橙云） |
+
+3. **SSL/TLS → 概述 → 加密模式** 设为 **`完全（Full）`**
+4. **SSL/TLS → 边缘证书 → 始终使用 HTTPS** 开启
+
+证书签发需要 10~30 分钟，期间站点可能暂时打不开，属正常现象。
 
 **SSL/TLS → 边缘证书：**
 
