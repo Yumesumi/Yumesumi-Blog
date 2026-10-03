@@ -65,6 +65,9 @@ const ogImageURL = Astro.site
     <title>{fullTitle}</title>
     <meta name="description" content={siteDescription} />
     <link rel="canonical" href={canonicalURL} />
+
+    <!-- 明确声明本站只提供 HTTPS，浏览器遇到 http 时会直接升级 -->
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="sitemap" href="/sitemap-index.xml" />
 
