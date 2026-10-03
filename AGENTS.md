@@ -76,7 +76,7 @@ ls dist/tags/                                             # 中文目录名，�
 
 ---
 
-## 八个必须知道的坑
+## 九个必须知道的坑
 
 这些都真实踩过，动手前先看一遍。
 
@@ -160,6 +160,29 @@ new URL('../search-index.json', location.href)  // ✓ 从当前页面上溯
 ```
 
 同理，`robots.txt` 里的 `Sitemap:` 用绝对 URL 反而是对的（那是给爬虫看的）。
+
+### 9. JS 动态创建的节点也要用 `toSiteUrl()` 换算路径
+
+比坑 8 更隐蔽的一层：不只是 `fetch`，**JS 运行期创建的 `<a href>` 和
+`location.href` 赋值**同样不受 `relative-base` 插件照顾。
+
+搜索索引里的 `url` 字段是 `/blog/xxx/`（站点根绝对路径）。直接赋给
+`location.href`，在 `github.io/Yumesumi-Blog/` 下会丢掉子路径前缀 → 404。
+
+**统一用 `src/lib/search-client.ts` 的 `toSiteUrl()`**：
+
+```js
+import { toSiteUrl } from '../lib/search-client';
+
+a.href = toSiteUrl(entry.url);          // ✓
+location.href = toSiteUrl(matched[0].url); // ✓
+```
+
+它靠 Header 里的 `<a data-site-root>` 标记确定站点根 —— 该链接的 `href`
+已被插件改写成 `./` 或 `../../`，所以 `marker.href` 在两种地址下都正确。
+
+> 加新的动态链接功能时，先问一句：这个路径是绝对的还是相对的？
+> 站点根绝对路径在子路径下必然出错。
 
 ---
 

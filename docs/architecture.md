@@ -37,7 +37,8 @@ src/
 │   ├── posts.ts            查询文章、统计标签、标签路径、分享图
 │   ├── format.ts           日期格式化、阅读时长估算
 │   ├── site.ts             站点常量、绝对 URL 工具
-│   └── search-index.ts     搜索索引生成
+│   ├── search-index.ts     搜索索引生成（构建期）
+│   └── search-client.ts    搜索评分与匹配（浏览器端，顶栏与搜索页共用）
 ├── plugins/
 │   └── relative-base.ts    构建后改写路径（见决策 1）
 ├── styles/               全局 CSS，分 4 个文件

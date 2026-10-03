@@ -1,10 +1,10 @@
 ---
 import ThemeToggle from './ThemeToggle.astro';
+import HeaderSearch from './HeaderSearch.astro';
 
 const nav = [
   { href: '/', label: '首页' },
   { href: '/tags/', label: '标签' },
-  { href: '/search/', label: '搜索' },
   { href: '/about/', label: '关于' },
 ];
 
@@ -14,7 +14,12 @@ const current = pathname === '/' ? '/' : `${pathname.replace(/\/$/, '')}/`;
 
 <header class="site-header">
   <div class="container site-header__inner">
-    <a href="/" class="site-header__brand">
+    <!--
+      标记站点根地址。搜索结果里的链接是 /blog/xxx/ 这种绝对路径，
+      而站点同时支持根路径与 github.io 子路径两种访问方式，
+      JS 需要靠这个标记把绝对路径解析成当前站点下可用的地址。
+    -->
+    <a href="/" class="site-header__brand" data-site-root>
       <span class="site-header__mark" aria-hidden="true"></span>
       <span>梦澄博客</span>
     </a>
@@ -37,6 +42,8 @@ const current = pathname === '/' ? '/' : `${pathname.replace(/\/$/, '')}/`;
           }
         </ul>
       </nav>
+
+      <HeaderSearch />
       <ThemeToggle />
     </div>
   </div>
