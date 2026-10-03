@@ -135,6 +135,52 @@ pinned: false                 # 选填，true 时在列表置顶
 
 ---
 
+## 📌 为什么两个地址都能正常显示
+
+站点现在**同时支持**两种访问方式，域名切换前后都不用改任何配置：
+
+| 状态 | 访问地址 |
+| --- | --- |
+| 域名未生效（当前） | `https://yumesumi.github.io/Yumesumi-Blog/` |
+| 域名生效后 | `https://yumesumi.cyou/` |
+
+**这是怎么做到的**
+
+仓库名 `Yumesumi-Blog` 不是 `用户名.github.io` 形式，所以域名生效前
+GitHub Pages 会把站点挂在**子路径** `/Yumesumi-Blog/` 下，而域名生效后
+站点在**根路径** `/`。两种情况需要的资源前缀不同：
+
+- 子路径需要 `/Yumesumi-Blog/_astro/xxx.css`
+- 根路径需要 `/_astro/xxx.css`
+
+Astro 的 `base` 只能配一个绝对值，写死任何一个都会让另一个地址**样式全失**
+（CSS 404，页面变成没有排版的裸 HTML）。
+
+解法分两步：
+
+1. `astro.config.mjs` 里把 `base` 设为 `'/Yumesumi-Blog'`，让 Astro 正常生成带前缀的资源引用
+2. 构建结束后，`src/utils/relative-base.js` 这个 Astro 插件会把产物 HTML 里的绝对路径
+   全部改写成**文档相对路径**（`../../_astro/xxx.css`）
+
+浏览器解析相对路径时以当前文档地址为基准，所以同一份产物在两个地址下都正确：
+
+```text
+域名根路径：   https://yumesumi.cyou/blog/hello-world/  +  ../../_astro/x.css
+            → https://yumesumi.cyou/_astro/x.css                     ✓
+子路径：       https://yumesumi.github.io/Yumesumi-Blog/blog/hello-world/
+            +  ../../_astro/x.css
+            → https://yumesumi.github.io/Yumesumi-Blog/_astro/x.css  ✓
+```
+
+该插件同时会修正 `canonical`、`og:url` 和 `sitemap.xml` 里的地址，
+去掉仓库名前缀，保证它们始终指向主域名。
+
+> ⚠️ 以后如果改了文章里的站内链接，注意**不要手写绝对路径**。
+> 直接写 `/tags/` 即可，插件会自动转成相对于当前页面的路径。
+> 手写成 `https://yumesumi.cyou/...` 绝对地址也可以（本来就不需要改写）。
+
+---
+
 ## ⚠️ 重要：SSL 模式为什么不能选「完全（严格）」
 
 这是一个已知的长期问题，跟 Cloudflare 代理 GitHub Pages 的组合有关：
@@ -147,6 +193,7 @@ Cloudflare 开启橙云代理后，DNS 解析到的是 Cloudflare 的 IP，
 
 - 站点前几个月一切正常
 - 大约 **3 个月后** GitHub 续期失败
+
 - Cloudflare 校验源站证书失败 → **站点直接返回 526 错误，完全打不开**
 
 设成 `完全（Full）` 可以规避：到 GitHub 走 HTTPS 但不校验证书有效性，

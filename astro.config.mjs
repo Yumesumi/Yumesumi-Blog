@@ -1,20 +1,35 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
+import { relativeBase, BUILD_BASE } from './src/utils/relative-base.js';
 
-// https://astro.build/config
+/**
+ * 站点地址与 base 前缀
+ *
+ * 背景：这个仓库叫 `Yumesumi-Blog`，不是 `Yumesumi.github.io` 形式。
+ * 在自定义域名 yumesumi.cyou 生效**之前**，GitHub Pages 会把站点挂在
+ * `https://yumesumi.github.io/Yumesumi-Blog/` 这个子路径下；域名生效后，
+ * 站点会移到根路径 `https://yumesumi.cyou/`。
+ *
+ * 两种情况需要的前缀不同：
+ *   - 子路径：资源必须是 /Yumesumi-Blog/_astro/xxx.css
+ *   - 根路径：资源必须是 /_astro/xxx.css
+ *
+ * Astro 的 base 只能二选一，写死任何一个都会让另一个地址样式全失。
+ * 解法：构建时用子路径前缀（让 Astro 正确生成资源引用），
+ * 构建结束后再由 relativeBase 插件把绝对路径改写为文档相对路径。
+ * 浏览器按当前页面地址逐级解析，于是两个地址同时可用。
+ */
 export default defineConfig({
-  // 站点地址。使用自定义域名（yumesumi.cyou），站点挂在域名根路径。
   site: 'https://yumesumi.cyou',
 
-  // 注意：这里刻意不设置 `base`。
-  // 自定义域名部署时 GitHub Pages 会把站点挂在根路径，一旦误设
-  // base: '/Yumesumi-Blog'，所有站内链接都会变成 /Yumesumi-Blog/... 导致全站 404。
+  // ★ 必须是字面量字符串：Astro 读取配置时做静态分析，
+  //   写成变量表达式会拿到 undefined，导致资源路径不带前缀。
+  base: '/Yumesumi-Blog',
 
-  // 纯静态输出
   output: 'static',
 
-  integrations: [sitemap()],
+  integrations: [sitemap(), relativeBase()],
 
   markdown: {
     // Shiki 双主题：分别输出 light / dark 两套 CSS 变量，
