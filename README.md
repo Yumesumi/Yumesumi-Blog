@@ -18,9 +18,32 @@ npm run preview # 预览构建结果
 
 ---
 
-## 写新文章
+## 发布一篇新文章
 
-**只需新建一个文件夹，写一个 Markdown 文件，推送。** 其他什么都不用管。
+### 最快的方式：一键脚手架
+
+```bash
+bash scripts/new-post.sh "我的文章标题" 标签1 标签2
+```
+
+会生成 `src/content/blog/post-日期-编号/index.md`，头部字段和示例正文都填好了，
+你只需要改标题、摘要和正文。改完 push 就上线。
+
+```text
+已创建: src/content/blog/post-20261003-14730/index.md
+
+接下来:
+  1. 编辑 index.md，把 TODO 换成真实摘要
+  2. 把配图放到该目录（可选），正文用 ./文件名 引用
+  3. 预览: npm run dev
+  4. 发布: git add . && git commit -m "..." && git push
+```
+
+目录名可以随便改成你想要的样子（英文小写加连字符），改完网站 URL 跟着变。
+
+### 手动创建
+
+**只需新建一个文件夹，写一个 Markdown 文件，推送。**
 
 ```text
 src/content/blog/
@@ -35,15 +58,46 @@ src/content/blog/
 ---
 title: 我的新文章              # 必填
 date: 2026-10-03              # 必填
-description: 一句话摘要        # 选填，显示在列表卡片和 SEO 里
+description: 一句话摘要        # 强烈建议，列表卡片和 SEO 都靠它
 tags: ['技术', '前端']         # 选填，标签页会自动聚合
 draft: false                  # 选填，true 时草稿不出现在列表
 pinned: false                 # 选填，true 时在列表置顶
 ---
 ```
 
+| 字段 | 必填 | 说明 |
+| --- | :---: | --- |
+| `title` | ✅ | 文章标题 |
+| `date` | ✅ | 发布日期，格式 `2026-10-03` |
+| `description` | — | 列表卡片摘要 + SEO 描述，**建议写** |
+| `tags` | — | 标签数组，标签页自动聚合 |
+| `draft` | — | `true` 时不进列表，默认可通过 URL 访问 |
+| `pinned` | — | `true` 时在列表置顶 |
+
 字段写错时，`npm run build` 会直接报错并指出是哪个文件的哪个字段有问题，
 不会悄悄生成坏页面。改完记得跑一次 `npm run build` 验证（dev 模式只在访问该页时才校验）。
+
+### 完整发布流程
+
+```bash
+# 1. 新建文章文件夹
+bash scripts/new-post.sh "标题" 标签
+
+# 2. 本地预览（可选，浏览器打开 http://localhost:4321）
+npm run dev
+
+# 3. 验证构建无误（会校验 frontmatter）
+npm run build
+
+# 4. 提交并推送 → 网站自动更新，约 1 分钟上线
+git add -A
+git commit -m "feat: 添加《标题》"
+git -c http.proxy=socks5://127.0.0.1:10808 push
+```
+
+> 推送需要走你的本地代理，所以要带 `-c http.proxy=socks5://127.0.0.1:10808`。
+> 不想每次都带，可以在项目里配 `git config --local http.proxy socks5://127.0.0.1:10808`
+> （只影响这个仓库，代理关闭时再删掉）。
 
 ### 插入图片
 
@@ -62,6 +116,9 @@ pinned: false                 # 选填，true 时在列表置顶
 
 写一半不想发布？在头部加 `draft: true`，这篇文章就不会出现在首页列表，
 但仍可以通过 `/blog/你的文章名/` 直接访问，方便预览。写完记得改回 `false`。
+
+> ⚠️ 注意：`draft: true` 只影响**列表显示**，文章页面仍会生成、
+> 源码仍在公开仓库里。真正不想公开的内容不要放到这个博客仓库。
 
 ### 关于页
 
