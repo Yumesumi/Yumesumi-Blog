@@ -143,7 +143,21 @@ pinned: false                 # 选填，true 时在列表置顶
 
 | 设置项 | 值 |
 | --- | --- |
-| 始终使用 HTTPS | **开启** |
+| 始终使用 HTTPS | **开启** ← http 会 301 跳到 https |
+
+**GitHub Settings → Pages → Enforce HTTPS：保持关闭**
+
+> 不需要开。Cloudflare 的提示里说了，Origin 侧再强制 HTTPS 重定向
+> 可能导致 `ERR_TOO_MANY_REDIRECTS`。实测只开 Cloudflare 一层时，
+> 从 `http://yumesumi.github.io/Yumesumi-Blog/` 进入的跳转链路是：
+>
+> ```text
+> http://github.io/Yumesumi-Blog/  (GitHub 301)
+>   → http://yumesumi.cyou/        (Cloudflare 301)
+>     → https://yumesumi.cyou/     (200 ✓)
+> ```
+>
+> 每跳只进一步，收敛正常。详细说明见 [docs/force-https.md](docs/force-https.md)。
 
 **SSL/TLS → 概述 → 加密模式：**
 
