@@ -1,0 +1,189 @@
+/* ============================================
+   深浅双主题
+   ------------------------------------------------------------
+   三层结构，靠 CSS 特异性形成优先级：
+   1. @media (prefers-color-scheme: dark)  无 JS 兜底，首帧不白屏
+   2. html[data-theme='dark']              用户显式选择，唯一权威开关
+   3. :root                                浅色默认值
+
+   浅色是单独调过的一套色，不是深色的反转：
+   底色带紫（非死白）、正文用深紫灰（非纯黑）、光晕透明度更低。
+   ============================================ */
+
+/* ---------- 浅色（默认） ---------- */
+
+:root {
+  color-scheme: light;
+
+  /* 背景与表面 */
+  --bg-base: #fdfbff;
+  --glow-1: rgba(196, 148, 255, 0.14);
+  --glow-2: rgba(244, 175, 205, 0.12);
+  --surface: #ffffff;
+  --surface-raised: #faf7ff;
+  --border: rgba(124, 92, 190, 0.16);
+  --border-strong: rgba(124, 92, 190, 0.28);
+
+  /* 文字 */
+  --text: #2a1b45;
+  --text-strong: #1c1030;
+  --text-muted: #6b5b8a;
+
+  /* 强调色 */
+  --accent: #7c3aed;
+  --accent-hover: #a21caf;
+
+  /* 正文区：实色，不可透明，不承载渐变 */
+  --prose-bg: #ffffff;
+
+  /* 代码块容器（Shiki 内部颜色由 shiki.css 处理） */
+  --code-bg: #f6f3fb;
+}
+
+/* ---------- 深色（星云紫夜空） ---------- */
+
+html[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg-base: #1a1035;
+  --glow-1: rgba(168, 85, 247, 0.22);
+  --glow-2: rgba(236, 72, 153, 0.18);
+  --surface: #241545;
+  --surface-raised: #2e1b56;
+  --border: rgba(196, 181, 253, 0.14);
+  --border-strong: rgba(196, 181, 253, 0.26);
+
+  --text: #ede9fe;
+  --text-strong: #f5f3ff;
+  --text-muted: #b4a7d6;
+
+  --accent: #c084fc;
+  --accent-hover: #e879f9;
+
+  --prose-bg: #1f1240;
+
+  --code-bg: #191033;
+}
+
+/* ---------- 系统偏好兜底 ---------- */
+/* 写在最后、特异性低于 html[data-theme='dark']，
+   所以用户手动选过之后系统偏好不再生效 —— 尊重显式选择。 */
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+
+    --bg-base: #1a1035;
+    --glow-1: rgba(168, 85, 247, 0.22);
+    --glow-2: rgba(236, 72, 153, 0.18);
+    --surface: #241545;
+    --surface-raised: #2e1b56;
+    --border: rgba(196, 181, 253, 0.14);
+    --border-strong: rgba(196, 181, 253, 0.26);
+
+    --text: #ede9fe;
+    --text-strong: #f5f3ff;
+    --text-muted: #b4a7d6;
+
+    --accent: #c084fc;
+    --accent-hover: #e879f9;
+
+    --prose-bg: #1f1240;
+
+    --code-bg: #191033;
+  }
+}
+
+/* ============================================
+   星云背景光晕层
+   ------------------------------------------------------------
+   光晕只出现在页面底层，正文卡片是实色不透光，
+   保证中文长文阅读不受背景干扰。
+   ============================================ */
+
+.nebula {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+  background: var(--bg-base);
+  transition: background-color var(--transition);
+}
+
+.nebula::before,
+.nebula::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  /* 模糊是柔化光晕的关键 */
+  filter: blur(90px);
+  will-change: transform;
+}
+
+.nebula::before {
+  width: 55vw;
+  height: 55vw;
+  min-width: 420px;
+  min-height: 420px;
+  top: -18vw;
+  left: -12vw;
+  background: var(--glow-1);
+}
+
+.nebula::after {
+  width: 48vw;
+  height: 48vw;
+  min-width: 360px;
+  min-height: 360px;
+  bottom: -16vw;
+  right: -10vw;
+  background: var(--glow-2);
+}
+
+/* 极轻的星点纹理，只在深色下可见 */
+.nebula__stars {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity var(--transition);
+  background-image:
+    radial-gradient(1.5px 1.5px at 12% 22%, rgba(237, 233, 254, 0.7), transparent),
+    radial-gradient(1.5px 1.5px at 34% 68%, rgba(237, 233, 254, 0.5), transparent),
+    radial-gradient(1.5px 1.5px at 58% 14%, rgba(237, 233, 254, 0.6), transparent),
+    radial-gradient(1.5px 1.5px at 76% 52%, rgba(237, 233, 254, 0.45), transparent),
+    radial-gradient(1.5px 1.5px at 88% 78%, rgba(237, 233, 254, 0.55), transparent),
+    radial-gradient(1.5px 1.5px at 22% 86%, rgba(237, 233, 254, 0.4), transparent);
+}
+
+html[data-theme='dark'] .nebula__stars {
+  opacity: 1;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .nebula__stars {
+    opacity: 1;
+  }
+}
+
+/* ============================================
+   卡片 / 面板
+   ============================================ */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: border-color var(--transition), transform var(--transition),
+    box-shadow var(--transition);
+}
+
+.card-hover:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(76, 29, 149, 0.12);
+}
+
+html[data-theme='dark'] .card-hover:hover {
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
+}

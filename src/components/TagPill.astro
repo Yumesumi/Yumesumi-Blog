@@ -1,0 +1,54 @@
+---
+export interface Props {
+  tag: string;
+  count?: number;
+  /** 高亮当前标签（单标签页用） */
+  active?: boolean;
+}
+
+const { tag, count, active = false } = Astro.props;
+---
+
+<a
+  href={`/tags/${encodeURIComponent(tag)}/`}
+  class:list={['tag-pill', { 'is-active': active }]}
+  aria-label={count !== undefined ? `标签：${tag}，共 ${count} 篇文章` : `标签：${tag}`}
+>
+  <span>{tag}</span>
+  {count !== undefined && <span class="tag-pill__count">{count}</span>}
+</a>
+
+<style>
+  .tag-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    padding: 0.28em 0.75em;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--text-muted);
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    transition: color var(--transition), border-color var(--transition),
+      background-color var(--transition);
+  }
+
+  .tag-pill:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+  }
+
+  .tag-pill.is-active {
+    color: var(--bg-base);
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .tag-pill__count {
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.75;
+  }
+</style>

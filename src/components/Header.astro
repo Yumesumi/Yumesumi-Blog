@@ -1,0 +1,133 @@
+---
+import ThemeToggle from './ThemeToggle.astro';
+
+const nav = [
+  { href: '/', label: '首页' },
+  { href: '/tags/', label: '标签' },
+  { href: '/about/', label: '关于' },
+];
+
+const pathname = Astro.url.pathname.replace(/\/index\.html$/, '/');
+const current = pathname === '/' ? '/' : `${pathname.replace(/\/$/, '')}/`;
+---
+
+<header class="site-header">
+  <div class="container site-header__inner">
+    <a href="/" class="site-header__brand">
+      <span class="site-header__mark" aria-hidden="true"></span>
+      <span>梦澄博客</span>
+    </a>
+
+    <div class="site-header__right">
+      <nav aria-label="主导航">
+        <ul class="site-header__nav">
+          {
+            nav.map((item) => (
+              <li>
+                <a
+                  href={item.href}
+                  class:list={['site-header__link', { 'is-active': current === item.href }]}
+                  aria-current={current === item.href ? 'page' : undefined}
+                >
+                  {item.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+      <ThemeToggle />
+    </div>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: color-mix(in srgb, var(--bg-base) 82%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    transition: background-color var(--transition), border-color var(--transition);
+  }
+
+  .site-header__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    min-height: 4rem;
+  }
+
+  .site-header__brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-weight: 600;
+    font-size: 1.0625rem;
+    color: var(--text-strong);
+    white-space: nowrap;
+  }
+
+  .site-header__brand:hover {
+    color: var(--accent);
+  }
+
+  .site-header__mark {
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    background: radial-gradient(circle at 32% 30%, var(--accent) 0%, transparent 62%),
+      radial-gradient(circle at 70% 72%, #ec4899 0%, transparent 58%),
+      var(--surface-raised);
+    border: 1px solid var(--border-strong);
+    flex-shrink: 0;
+  }
+
+  .site-header__right {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+  }
+
+  .site-header__nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .site-header__link {
+    display: inline-block;
+    padding: 0.4rem 0.7rem;
+    border-radius: 6px;
+    font-size: 0.9375rem;
+    color: var(--text-muted);
+    transition: color var(--transition), background-color var(--transition);
+  }
+
+  .site-header__link:hover {
+    color: var(--accent);
+    background: var(--surface-raised);
+  }
+
+  .site-header__link.is-active {
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+  }
+
+  @media (max-width: 30rem) {
+    .site-header__nav {
+      gap: 0;
+    }
+
+    .site-header__link {
+      padding: 0.4rem 0.5rem;
+      font-size: 0.875rem;
+    }
+  }
+</style>

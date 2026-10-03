@@ -1,0 +1,43 @@
+name: Deploy to GitHub Pages
+
+on:
+  # 推送到 main 时自动触发
+  push:
+    branches: [main]
+  # 也可以在 Actions 标签页手动触发
+  workflow_dispatch:
+
+# 三项权限缺一不可。
+# 缺 id-token: write 会失败并抛出难懂的 OIDC 错误，这是最常见的踩坑点。
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 连续 push 时自动取消旧构建，保证最新 commit 生效
+concurrency:
+  group: 'pages'
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install, build, and upload your site
+        uses: withastro/action@v6
+        # 不指定 package-manager，action 会自动读 package-lock.json 识别为 npm。
+        # 因此 package-lock.json 必须提交到仓库。
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

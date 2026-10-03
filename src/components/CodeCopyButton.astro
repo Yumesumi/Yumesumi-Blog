@@ -1,0 +1,103 @@
+<button class="code-copy" type="button" data-code-copy aria-label="复制代码">
+  <svg
+    class="code-copy__icon"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.8"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    <rect x="9" y="9" width="12" height="12" rx="2"></rect>
+    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+  </svg>
+  <span class="code-copy__label">复制</span>
+</button>
+
+<script>
+  /**
+   * 代码块由 Markdown 渲染生成，不在 Astro 组件树里，
+   * 所以只能在运行时扫描 DOM 注入按钮。
+   */
+  function initCopyButtons() {
+    const blocks = document.querySelectorAll('pre.astro-code');
+    blocks.forEach((pre) => {
+      if (pre.querySelector('[data-code-copy]')) return;
+
+      const button = document.createElement('button');
+      button.className = 'code-copy';
+      button.type = 'button';
+      button.dataset.codeCopy = '';
+      button.setAttribute('aria-label', '复制代码');
+      button.innerHTML =
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ' +
+        'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+        '<rect x="9" y="9" width="12" height="12" rx="2"></rect>' +
+        '<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>' +
+        '<span class="code-copy__label">复制</span>';
+      pre.appendChild(button);
+    });
+  }
+
+  async function copyText(text: string): Promise<boolean> {
+    // navigator.clipboard 需要安全上下文（HTTPS 或 localhost）。
+    // 线上如果因 SSL 配置问题走了 HTTP，这里会失败，需要降级。
+    if (navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch {
+        /* 落到下面的降级分支 */
+      }
+    }
+
+    // 降级：execCommand 在非安全上下文下仍可用
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.top = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    } catch {
+      return false;
+    }
+  }
+
+  // 用事件委托，一个监听器处理所有按钮
+  document.addEventListener('click', async (event) => {
+    const target = event.target as HTMLElement | null;
+    const button = target?.closest<HTMLElement>('[data-code-copy]');
+    if (!button) return;
+
+    const pre = button.closest('pre');
+    if (!pre) return;
+
+    // 取 textContent 而不是 innerText：后者会丢空白，破坏缩进
+    const code = pre.querySelector('code')?.textContent ?? pre.textContent ?? '';
+    const label = button.querySelector('.code-copy__label');
+
+    const success = await copyText(code);
+    button.dataset.copied = String(success);
+    if (label) label.textContent = success ? '已复制' : '复制失败';
+
+    setTimeout(() => {
+      delete button.dataset.copied;
+      if (label) label.textContent = '复制';
+    }, 2000);
+  });
+
+  initCopyButtons();
+</script>
+
+<style>
+  /* 这里的样式在 styles/shiki.css 中，这里只保留组件内的兜底 */
+  .code-copy__label {
+    white-space: nowrap;
+  }
+</style>

@@ -1,0 +1,89 @@
+/* ============================================
+   Shiki 代码高亮 —— 双主题
+   ------------------------------------------------------------
+   astro.config.mjs 里配了 themes: { light, dark }，
+   Shiki 会输出两套 CSS 变量：
+     默认（写在 inline style 上）→ --shiki-light*
+     额外的深色变量              → --shiki-dark*
+
+   所以必须手动在深色模式下切到 --shiki-dark* 变量。
+   注意选择器类名是 .astro-code，不是 .shiki。
+
+   这里刻意用 html[data-theme='dark'] 而不是
+   @media (prefers-color-scheme: dark)：
+   用户手动切到浅色后，主题偏好已存 localStorage，
+   此时系统偏好不再权威，若用 media query 会导致代码块不同步变色。
+   ============================================ */
+
+html[data-theme='dark'] .astro-code,
+html[data-theme='dark'] .astro-code span {
+  color: var(--shiki-dark) !important;
+  background-color: var(--shiki-dark-bg) !important;
+  font-style: var(--shiki-dark-font-style) !important;
+  font-weight: var(--shiki-dark-font-weight) !important;
+  text-decoration: var(--shiki-dark-text-decoration) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .astro-code,
+  :root:not([data-theme='light']) .astro-code span {
+    color: var(--shiki-dark) !important;
+    background-color: var(--shiki-dark-bg) !important;
+    font-style: var(--shiki-dark-font-style) !important;
+    font-weight: var(--shiki-dark-font-weight) !important;
+    text-decoration: var(--shiki-dark-text-decoration) !important;
+  }
+}
+
+/* ============================================
+   代码块复制按钮
+   ============================================ */
+
+.code-copy {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  padding: 0.35em 0.7em;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  opacity: 0;
+  transition: opacity var(--transition), color var(--transition),
+    border-color var(--transition), background-color var(--transition);
+  z-index: 2;
+}
+
+.prose pre:hover .code-copy,
+.code-copy:focus-visible {
+  opacity: 1;
+}
+
+.code-copy:hover {
+  color: var(--accent);
+  border-color: var(--border-strong);
+}
+
+.code-copy[data-copied='true'] {
+  color: var(--accent);
+  border-color: var(--accent);
+  opacity: 1;
+}
+
+.code-copy svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+
+/* 触屏设备没有 hover，直接常显 */
+@media (hover: none) {
+  .code-copy {
+    opacity: 1;
+  }
+}

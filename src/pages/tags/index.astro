@@ -1,0 +1,107 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const posts = await getCollection('blog', ({ data }) => data.draft !== true);
+
+// 统计每个标签的文章数
+const tagCounts = new Map<string, number>();
+for (const post of posts) {
+  for (const tag of post.data.tags) {
+    tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+  }
+}
+
+// 按文章数降序，同数按标签名排序，保证顺序稳定
+const tags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'zh'));
+
+const maxCount = tags.length > 0 ? Math.max(...tags.map(([, c]) => c)) : 1;
+---
+
+<BaseLayout title="标签" description="按标签浏览梦澄博客的全部文章。">
+  <div class="container">
+    <header class="tags__header">
+      <h1 class="tags__title">标签</h1>
+      <p class="tags__subtitle">共 {tags.length} 个标签 · {posts.length} 篇文章</p>
+    </header>
+
+    {
+      tags.length > 0 ? (
+        <div class="tags__cloud">
+          {tags.map(([tag, count]) => (
+            <a
+              href={`/tags/${encodeURIComponent(tag)}/`}
+              class="tag-cloud__item"
+              style={`--weight: ${0.85 + (count / maxCount) * 0.55};`}
+            >
+              <span>{tag}</span>
+              <span class="tag-cloud__count">{count}</span>
+            </a>
+          ))}
+        </div>
+      ) : (
+        <p class="tags__empty">还没有任何标签。</p>
+      )
+    }
+  </div>
+</BaseLayout>
+
+<style>
+  .tags__header {
+    margin-bottom: var(--space-6);
+  }
+
+  .tags__title {
+    font-size: 1.75rem;
+    margin: 0 0 0.35rem;
+  }
+
+  .tags__subtitle {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.9375rem;
+  }
+
+  .tags__cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+  }
+
+  /* 文章数越多的标签字号越大 */
+  .tag-cloud__item {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.45em;
+    padding: 0.5em 1.1em;
+    font-size: calc(0.9375rem * var(--weight));
+    color: var(--text-muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    transition: color var(--transition), border-color var(--transition),
+      background-color var(--transition), transform var(--transition);
+  }
+
+  .tag-cloud__item:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    transform: translateY(-2px);
+  }
+
+  .tag-cloud__count {
+    font-size: 0.75em;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.7;
+  }
+
+  .tags__empty {
+    padding: var(--space-6);
+    text-align: center;
+    color: var(--text-muted);
+    background: var(--surface);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+  }
+</style>

@@ -1,0 +1,82 @@
+<button class="back-to-top" type="button" data-back-to-top aria-label="回到顶部" hidden>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M12 19V5M5 12l7-7 7 7"></path>
+  </svg>
+</button>
+
+<script>
+  const SHOW_AFTER = 300;
+
+  function initBackToTop() {
+    const button = document.querySelector<HTMLElement>('[data-back-to-top]');
+    if (!button) return;
+
+    let ticking = false;
+
+    const update = () => {
+      const show = window.scrollY > SHOW_AFTER;
+      button.hidden = !show;
+      ticking = false;
+    };
+
+    window.addEventListener(
+      'scroll',
+      () => {
+        if (!ticking) {
+          ticking = true;
+          window.requestAnimationFrame(update);
+        }
+      },
+      { passive: true },
+    );
+
+    button.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    update();
+  }
+
+  initBackToTop();
+</script>
+
+<style>
+  .back-to-top {
+    position: fixed;
+    right: var(--space-5);
+    bottom: var(--space-5);
+    z-index: 30;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 50%;
+    color: var(--text-muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 16px rgba(76, 29, 149, 0.14);
+    transition: color var(--transition), border-color var(--transition),
+      transform var(--transition), background-color var(--transition);
+  }
+
+  .back-to-top[hidden] {
+    display: none;
+  }
+
+  .back-to-top:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+
+  html[data-theme='dark'] .back-to-top {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+  }
+
+  .back-to-top svg {
+    width: 1.15rem;
+    height: 1.15rem;
+  }
+</style>

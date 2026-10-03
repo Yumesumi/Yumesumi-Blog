@@ -1,0 +1,50 @@
+---
+import { getCollection, getEntry, render } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Prose from '../components/Prose.astro';
+import CodeCopyButton from '../components/CodeCopyButton.astro';
+import BackToTop from '../components/BackToTop.astro';
+
+// 关于页内容在 src/content/pages/about.md，用 Markdown 编写。
+// 好处是改文字不用碰代码，且不会混进文章列表。
+const page = await getEntry('pages', 'about');
+
+if (!page) {
+  throw new Error(
+    '找不到 src/content/pages/about.md。请确认该文件存在，或检查 content.config.ts 里的 pages 集合配置。',
+  );
+}
+
+// 顺便统计一下文章数，显示在侧边
+const postCount = (await getCollection('blog', ({ data }) => data.draft !== true)).length;
+
+const { Content, headings } = await render(page);
+---
+
+<BaseLayout title={page.data.title} description={page.data.description}>
+  <div class="container container--narrow">
+    <Prose>
+      <Content />
+    </Prose>
+    <CodeCopyButton />
+
+    <p class="about__footnote">
+      目前共有 {postCount} 篇已发布文章 · <a href="/tags/">按标签浏览</a>
+    </p>
+  </div>
+
+  <BackToTop />
+</BaseLayout>
+
+<style>
+  .container--narrow {
+    max-width: var(--max-width);
+  }
+
+  .about__footnote {
+    margin-top: var(--space-5);
+    text-align: center;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+  }
+</style>

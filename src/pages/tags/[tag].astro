@@ -1,0 +1,80 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostCard from '../../components/PostCard.astro';
+import TagPill from '../../components/TagPill.astro';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog', ({ data }) => data.draft !== true);
+
+  const tags = new Set<string>();
+  for (const post of posts) {
+    for (const tag of post.data.tags) tags.add(tag);
+  }
+
+  return [...tags].map((tag) => ({
+    // 路由参数必须是已编码的，中文标签才能正确匹配
+    params: { tag },
+    props: {
+      posts: posts
+        .filter((post) => post.data.tags.includes(tag))
+        .sort((a, b) => b.data.date.getTime() - a.data.date.getTime()),
+    },
+  }));
+}
+
+const { posts } = Astro.props;
+const tag = Astro.params.tag ?? '';
+// Astro.params 里的值是解码后的，直接用于展示
+const tagName = decodeURIComponent(tag);
+---
+
+<BaseLayout title={`标签：${tagName}`} description={`梦澄博客中标签为「${tagName}」的文章。`}>
+  <div class="container">
+    <a href="/tags/" class="tag-page__back">← 返回标签列表</a>
+
+    <header class="tag-page__header">
+      <h1 class="tag-page__title">
+        <TagPill tag={tagName} count={posts.length} active />
+      </h1>
+      <p class="tag-page__count">共 {posts.length} 篇文章</p>
+    </header>
+
+    <div class="tag-page__list">
+      {posts.map((post) => <PostCard post={post} />)}
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .tag-page__back {
+    display: inline-block;
+    margin-bottom: var(--space-5);
+    font-size: 0.875rem;
+    color: var(--text-muted);
+  }
+
+  .tag-page__back:hover {
+    color: var(--accent);
+  }
+
+  .tag-page__header {
+    margin-bottom: var(--space-6);
+  }
+
+  .tag-page__title {
+    margin: 0 0 0.5rem;
+  }
+
+  .tag-page__count {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.9375rem;
+  }
+
+  .tag-page__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+</style>

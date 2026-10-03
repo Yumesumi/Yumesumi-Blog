@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="梦澄博客封面">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#150E2A"/>
+      <stop offset="50%" stop-color="#2A1550"/>
+      <stop offset="100%" stop-color="#150E2A"/>
+    </linearGradient>
+    <radialGradient id="glow1" cx="0.28" cy="0.32" r="0.6">
+      <stop offset="0%" stop-color="#C084FC" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#C084FC" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow2" cx="0.78" cy="0.72" r="0.55">
+      <stop offset="0%" stop-color="#F472B6" stop-opacity="0.38"/>
+      <stop offset="100%" stop-color="#F472B6" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#glow1)"/>
+  <rect width="1200" height="630" fill="url(#glow2)"/>
+  <g fill="none" stroke="#C4B5FD" stroke-opacity="0.5" stroke-width="1.5">
+    <circle cx="960" cy="150" r="3" fill="#C4B5FD" stroke="none"/>
+    <circle cx="1060" cy="240" r="2" fill="#C4B5FD" stroke="none"/>
+    <circle cx="140" cy="500" r="2.5" fill="#C4B5FD" stroke="none"/>
+    <circle cx="230" cy="120" r="2" fill="#C4B5FD" stroke="none"/>
+  </g>
+  <g fill="#EDE9FE" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" text-anchor="middle">
+    <text x="600" y="300" font-size="86" font-weight="500" letter-spacing="12">梦澄博客</text>
+    <text x="600" y="368" font-size="28" fill="#B4A7D6" letter-spacing="2">记录 · 思考 · 分享</text>
+  </g>
+</svg>

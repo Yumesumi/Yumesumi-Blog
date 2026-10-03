@@ -1,0 +1,74 @@
+---
+import type { MarkdownHeading } from 'astro';
+
+export interface Props {
+  headings: MarkdownHeading[];
+}
+
+const { headings } = Astro.props;
+
+/**
+ * 只保留 h2 和 h3。
+ * h1 是文章标题（渲染在正文上方），h4 以下层级太深，对目录无价值。
+ */
+const toc = headings.filter((h) => h.depth === 2 || h.depth === 3);
+---
+
+{/* 空数组时整个侧栏不渲染 —— 短文章不该有目录 */ }
+{
+  toc.length > 0 && (
+    <nav class="toc" aria-label="文章目录">
+      <p class="toc__title">目录</p>
+      <ol class="toc__list">
+        {toc.map((h) => (
+          <li class:list={['toc__item', `toc__item--h${h.depth}`]}>
+            <a href={`#${h.slug}`}>{h.text}</a>
+          </li>
+        ))}
+      </ol>
+    </nav>
+  )
+}
+
+<style>
+  .toc__title {
+    margin: 0 0 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .toc__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    border-left: 1px solid var(--border);
+  }
+
+  .toc__item a {
+    display: block;
+    padding: 0.32rem 0.85rem;
+    margin-left: -1px;
+    border-left: 2px solid transparent;
+    font-size: 0.8438rem;
+    line-height: 1.5;
+    color: var(--text-muted);
+    transition: color var(--transition), border-color var(--transition);
+  }
+
+  .toc__item a:hover {
+    color: var(--accent);
+    border-left-color: var(--accent);
+  }
+
+  /* h3 比 h2 多缩进一级 */
+  .toc__item--h3 a {
+    padding-left: 1.6rem;
+    font-size: 0.8125rem;
+  }
+</style>

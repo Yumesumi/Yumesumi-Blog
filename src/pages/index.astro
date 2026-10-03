@@ -1,0 +1,64 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PostCard from '../components/PostCard.astro';
+
+const posts = (await getCollection('blog', ({ data }) => data.draft !== true))
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
+  // 置顶的排在最前，其余保持日期倒序
+  .sort((a, b) => Number(b.data.pinned) - Number(a.data.pinned));
+---
+
+<BaseLayout title="梦澄博客" description="梦澄的个人博客，记录技术笔记、阅读与思考。">
+  <div class="container">
+    <header class="home__intro">
+      <h1 class="home__title">梦澄博客</h1>
+      <p class="home__subtitle">记录 · 思考 · 分享</p>
+    </header>
+
+    {
+      posts.length > 0 ? (
+        <div class="home__list">
+          {posts.map((post) => (
+            <PostCard post={post} />
+          ))}
+        </div>
+      ) : (
+        <p class="home__empty">还没有已发布的文章。</p>
+      )
+    }
+  </div>
+</BaseLayout>
+
+<style>
+  .home__intro {
+    margin-bottom: var(--space-7);
+  }
+
+  .home__title {
+    font-size: 2rem;
+    margin: 0 0 0.35rem;
+    letter-spacing: 0.02em;
+  }
+
+  .home__subtitle {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.9375rem;
+  }
+
+  .home__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .home__empty {
+    padding: var(--space-6);
+    text-align: center;
+    color: var(--text-muted);
+    background: var(--surface);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+  }
+</style>

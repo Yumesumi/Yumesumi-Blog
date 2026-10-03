@@ -1,0 +1,43 @@
+---
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="container site-footer__inner">
+    <p>© {year} 梦澄博客</p>
+    <p class="site-footer__note">
+      由 <a href="https://astro.build/" target="_blank" rel="noopener noreferrer">Astro</a> 驱动 · 托管于
+      GitHub Pages
+    </p>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    border-top: 1px solid var(--border);
+    padding-block: var(--space-5);
+    margin-top: var(--space-8);
+    background: color-mix(in srgb, var(--bg-base) 60%, transparent);
+  }
+
+  .site-footer__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+    font-size: 0.875rem;
+    color: var(--text-muted);
+  }
+
+  .site-footer__note a {
+    color: var(--accent);
+  }
+
+  @media (max-width: 30rem) {
+    .site-footer__inner {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+</style>

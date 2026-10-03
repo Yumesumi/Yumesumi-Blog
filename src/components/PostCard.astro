@@ -1,0 +1,103 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import TagPill from './TagPill.astro';
+
+export interface Props {
+  post: CollectionEntry<'blog'>;
+  /** 是否显示文章描述（首页卡片显示，列表页可省略） */
+  showDescription?: boolean;
+}
+
+const { post, showDescription = true } = Astro.props;
+const { title, description, date, tags, pinned } = post.data;
+
+const href = `/blog/${post.id}/`;
+const dateISO = date.toISOString();
+const dateText = new Intl.DateTimeFormat('zh-CN', {
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+}).format(date);
+---
+
+<article class="post-card card card-hover">
+  <div class="post-card__body">
+    <div class="post-card__meta">
+      <time datetime={dateISO}>{dateText}</time>
+      {pinned && <span class="post-card__badge">置顶</span>}
+    </div>
+
+    <h3 class="post-card__title">
+      <a href={href}>{title}</a>
+    </h3>
+
+    {showDescription && description && <p class="post-card__desc">{description}</p>}
+
+    {
+      tags.length > 0 && (
+        <div class="post-card__tags">
+          {tags.map((tag) => (
+            <TagPill tag={tag} />
+          ))}
+        </div>
+      )
+    }
+  </div>
+</article>
+
+<style>
+  .post-card {
+    padding: var(--space-5);
+  }
+
+  .post-card__body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  .post-card__meta {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+  }
+
+  .post-card__badge {
+    padding: 0.1em 0.55em;
+    font-size: 0.75rem;
+    border-radius: 999px;
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  }
+
+  .post-card__title {
+    font-size: 1.25rem;
+    line-height: 1.4;
+    margin: 0;
+  }
+
+  .post-card__title a {
+    color: var(--text-strong);
+  }
+
+  .post-card__title a:hover {
+    color: var(--accent);
+  }
+
+  .post-card__desc {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.9375rem;
+    line-height: 1.7;
+  }
+
+  .post-card__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.25rem;
+  }
+</style>
