@@ -29,6 +29,8 @@ export default defineConfig({
 
   output: 'static',
 
+  // 搜索索引用 src/pages/search-index.json.ts 这个 endpoint 生成，
+  // 不用插件 —— 插件在 build:done 阶段拿不到 astro:content 虚拟模块。
   integrations: [sitemap(), relativeBase()],
 
   markdown: {

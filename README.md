@@ -339,7 +339,9 @@ Cloudflare 收到重定向又转发回来，会形成**无限重定向循环**�
     ├── content.config.ts           # 内容集合定义（schema 校验）
     ├── lib/                        # 纯逻辑，不依赖 Astro 运行时
     │   ├── posts.ts                  文章查询、标签统计、标签路径
-    │   └── format.ts                 日期格式化、阅读时长估算
+    │   ├── format.ts                 日期格式化、阅读时长估算
+    │   ├── site.ts                   站点常量、绝对 URL、默认分享图
+    │   └── search-index.ts           搜索索引生成
     ├── plugins/
     │   └── relative-base.ts          构建后把路径改写为文档相对路径
     ├── content/                    # ★ Markdown 内容（写文章改这里）
@@ -347,8 +349,8 @@ Cloudflare 收到重定向又转发回来，会形成**无限重定向循环**�
     │   └── pages/about.md            关于页
     ├── styles/                     # global / theme / prose / shiki
     ├── layouts/                    # BaseLayout、PostLayout
-    ├── components/                 # 8 个无状态组件
-    └── pages/                      # 路由
+    ├── components/                 # 10 个无状态组件
+    └── pages/                      # 路由（含 search.astro、search-index.json.ts）
 ```
 
 分层原则：`pages` → `layouts` → `components` → `lib`。
@@ -361,8 +363,8 @@ Cloudflare 收到重定向又转发回来，会形成**无限重定向循环**�
 ## 技术说明
 
 - **纯静态**：构建产物是一堆 HTML 文件，没有服务端
-- **零前端框架运行时**：整站只有主题切换、代码复制、回到顶部三处用到 JS，
-  全部原生代码，总共不到 100 行
+- **零前端框架运行时**：整站只有主题切换、代码复制、回到顶部、搜索四处用到 JS，
+  全部原生代码，总共不到 200 行
 - **代码高亮**：Shiki，构建时完成，颜色直接写进 HTML
 - **主题切换**：CSS 变量 + `data-theme` 属性，选择存在 localStorage，
   首次访问跟随系统。防闪烁脚本内联在 `<head>` 最前面同步执行
@@ -371,6 +373,21 @@ Cloudflare 收到重定向又转发回来，会形成**无限重定向循环**�
 - **双地址兼容**：插件在构建后把绝对路径改写为文档相对路径，
   所以 `yumesumi.cyou` 和 `github.io/Yumesumi-Blog/` 都能正常显示，
   域名切换不需要改配置
+- **站内搜索**：构建期生成 `/search-index.json`，浏览器端过滤。
+  标题权重 10 分、标签 5 分、摘要 3 分、正文 1 分，支持多关键词（空格分隔）
+- **SEO**：Open Graph + Twitter Card + JSON-LD 结构化数据
+  （文章为 `BlogPosting`，页面为 `Blog`）
+
+### 分享图（og:image）
+
+每篇文章可指定分享图，**放在 `public/blog/<slug>/cover.svg`**（1200×630）。
+该目录原样拷贝到产物，路径可预测，适合 og:image 这类需要长期有效的地址。
+
+没有配置时回退到站点默认图 `public/og-default.svg`，不会出现死链。
+
+> 正文里引用的配图（`index.md` 同级的 `cover.svg`）会被 Astro 优化成
+> `_astro/cover.<hash>.svg`，**hash 构建前无法预知**，因此不适合做 og:image。
+> 这是两个独立的位置，别混淆。
 
 ### 改配色
 

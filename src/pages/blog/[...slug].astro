@@ -9,25 +9,36 @@ export async function getStaticPaths() {
   // 不显式过滤的话草稿会真的发布出去。
   const posts = await getPublishedPosts();
 
-  return posts.map((post, index) => ({
-    params: { slug: post.id },
-    props: {
-      post,
-      // 列表按日期倒序，所以数组里更靠前的是更新的文章。
-      // 站在当前文章视角：更新的是「上一篇」，更旧的是「下一篇」。
-      prevPost: posts[index - 1],
-      nextPost: posts[index + 1],
-    },
-  }));
+  return posts.map((post, index) => {
+    // 相关推荐：标签有交集的其他文章（排除自己）
+    const related = posts.filter(
+      (candidate) =>
+        candidate.id !== post.id &&
+        candidate.data.tags.some((tag) => post.data.tags.includes(tag)),
+    );
+
+    return {
+      params: { slug: post.id },
+      props: {
+        post,
+        related,
+        // 列表按日期倒序，所以数组里更靠前的是更新的文章。
+        // 站在当前文章视角：更新的是「上一篇」，更旧的是「下一篇」。
+        prevPost: posts[index - 1],
+        nextPost: posts[index + 1],
+      },
+    };
+  });
 }
 
 interface Props {
   post: Post;
+  related: Post[];
   prevPost?: Post;
   nextPost?: Post;
 }
 
-const { post, prevPost, nextPost } = Astro.props satisfies Props;
+const { post, related, prevPost, nextPost } = Astro.props satisfies Props;
 
 // Astro 7 用从 astro:content 导入的 render(post)，旧的 post.render() 已被移除。
 // headings 里的 slug 由 Astro 内置的 github-slugger 生成，与正文标题 id 一致，
@@ -39,6 +50,7 @@ const { Content, headings } = await render(post);
   post={post}
   headings={headings}
   body={post.body}
+  related={related}
   prevPost={prevPost}
   nextPost={nextPost}
 >

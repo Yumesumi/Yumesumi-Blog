@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="梦澄博客">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#150E2A"/>
+      <stop offset="50%" stop-color="#2A1550"/>
+      <stop offset="100%" stop-color="#150E2A"/>
+    </linearGradient>
+    <radialGradient id="g1" cx="0.28" cy="0.3" r="0.62">
+      <stop offset="0%" stop-color="#C084FC" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#C084FC" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="g2" cx="0.78" cy="0.74" r="0.58">
+      <stop offset="0%" stop-color="#F472B6" stop-opacity="0.42"/>
+      <stop offset="100%" stop-color="#F472B6" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#g1)"/>
+  <rect width="1200" height="630" fill="url(#g2)"/>
+  <g fill="#EDE9FE" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" text-anchor="middle">
+    <text x="600" y="300" font-size="88" font-weight="500" letter-spacing="14">梦澄博客</text>
+    <text x="600" y="368" font-size="28" fill="#B4A7D6" letter-spacing="2">记录 · 思考 · 分享</text>
+  </g>
+</svg>

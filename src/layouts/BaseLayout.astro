@@ -6,28 +6,84 @@ import '../styles/shiki.css';
 
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import { absoluteUrl, defaultOgImage, SITE_NAME, SITE_DESCRIPTION } from '../lib/site';
 
 export interface Props {
   title: string;
   description?: string;
   /** OG 类型，文章页传 article */
   ogType?: 'website' | 'article';
-  /** 文章发布时间，用于 OG */
+  /** 文章发布时间，用于 OG 与 JSON-LD */
   publishedTime?: Date;
+  /** 文章更新时间，用于 OG 与 JSON-LD */
+  modifiedTime?: Date;
+  /** 分享图路径（站点内绝对路径）。不传则用站点默认图 */
+  ogImage?: string;
+  /** 标签，JSON-LD 里作为 keywords */
+  tags?: string[];
+  /** 传给 JSON-LD 的文章类型，文章页传 BlogPosting */
+  jsonLdType?: 'Blog' | 'BlogPosting';
 }
 
-const { title, description, ogType = 'website', publishedTime } = Astro.props;
+const {
+  title,
+  description,
+  ogType = 'website',
+  publishedTime,
+  modifiedTime,
+  ogImage,
+  tags = [],
+  jsonLdType = 'Blog',
+} = Astro.props satisfies Props;
 
-const siteName = '梦澄博客';
-const siteDescription = description ?? '梦澄的个人博客，记录技术笔记、阅读与思考。';
+const siteDescription = description ?? SITE_DESCRIPTION;
 // 首页标题就是站点名，不重复拼接
-const fullTitle = title === siteName ? title : `${title} | ${siteName}`;
+const fullTitle = title === SITE_NAME ? title : `${title} | ${SITE_NAME}`;
 
 // 用 Astro.site 拼绝对 URL。OG 标签必须是绝对地址，相对路径无效。
 const canonicalURL = Astro.site ? new URL(Astro.url.pathname, Astro.site) : Astro.url;
-const ogImageURL = Astro.site
-  ? new URL('/placeholder-cover.svg', Astro.site)
-  : Astro.url;
+const ogImageURL = ogImage
+  ? absoluteUrl(ogImage)
+  : absoluteUrl(defaultOgImage);
+
+// ---------- JSON-LD 结构化数据 ----------
+// 让搜索引擎正确识别页面类型。文章页用 BlogPosting（含发布时间），
+// 其余页面用 Blog。`@graph` 把 WebSite 和文章串起来，
+// 让 Google 知道站点名、作者、文章归属。
+const websiteNode = {
+  '@type': 'WebSite',
+  '@id': `${absoluteUrl('/')}#website`,
+  url: absoluteUrl('/'),
+  name: SITE_NAME,
+  description: SITE_DESCRIPTION,
+  inLanguage: 'zh-CN',
+};
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    websiteNode,
+    {
+      '@type': jsonLdType,
+      '@id': `${canonicalURL.href}#${jsonLdType.toLowerCase()}`,
+      url: canonicalURL.href,
+      headline: title,
+      name: fullTitle,
+      description: siteDescription,
+      inLanguage: 'zh-CN',
+      isPartOf: { '@id': websiteNode['@id'] },
+      ...(jsonLdType === 'BlogPosting'
+        ? {
+            datePublished: publishedTime?.toISOString(),
+            dateModified: (modifiedTime ?? publishedTime)?.toISOString(),
+            author: { '@type': 'Person', name: SITE_NAME },
+            keywords: tags.length > 0 ? tags.join(', ') : undefined,
+            image: ogImageURL,
+          }
+        : {}),
+    },
+  ],
+};
 ---
 
 <!doctype html>
@@ -65,29 +121,33 @@ const ogImageURL = Astro.site
     <title>{fullTitle}</title>
     <meta name="description" content={siteDescription} />
     <link rel="canonical" href={canonicalURL} />
-
-    <!-- 明确声明本站只提供 HTTPS，浏览器遇到 http 时会直接升级 -->
-    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="sitemap" href="/sitemap-index.xml" />
 
+    <!-- 明确声明本站只提供 HTTPS，浏览器遇到 http 时会直接升级 -->
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests" />
+
     <!-- Open Graph -->
     <meta property="og:type" content={ogType} />
-    <meta property="og:site_name" content={siteName} />
+    <meta property="og:site_name" content={SITE_NAME} />
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={siteDescription} />
     <meta property="og:url" content={canonicalURL} />
     <meta property="og:image" content={ogImageURL} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta property="og:locale" content="zh_CN" />
-    {publishedTime && (
-      <meta property="article:published_time" content={publishedTime.toISOString()} />
-    )}
+    {publishedTime && <meta property="article:published_time" content={publishedTime.toISOString()} />}
+    {tags.map((tag) => <meta property="article:tag" content={tag} />)}
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={fullTitle} />
     <meta name="twitter:description" content={siteDescription} />
     <meta name="twitter:image" content={ogImageURL} />
+
+    <!-- 结构化数据 -->
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
 
     <meta name="generator" content={Astro.generator} />
   </head>
@@ -107,16 +167,3 @@ const ogImageURL = Astro.site
     <Footer />
   </body>
 </html>
-
-<style>
-  main {
-    min-height: 60vh;
-    padding-block: var(--space-6) var(--space-8);
-  }
-
-  @media (min-width: 48rem) {
-    main {
-      padding-block: var(--space-7) var(--space-8);
-    }
-  }
-</style>

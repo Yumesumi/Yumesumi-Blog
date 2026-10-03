@@ -1,0 +1,122 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { formatDateShort, toISO } from '../lib/format';
+
+export interface Props {
+  /** 当前文章的标签，用于匹配相关度 */
+  currentTags: string[];
+  /** 候选文章（已排除当前篇） */
+  posts: CollectionEntry<'blog'>[];
+  /** 最多显示几篇 */
+  limit?: number;
+}
+
+const { currentTags, posts, limit = 3 } = Astro.props satisfies Props;
+
+/**
+ * 相关度 = 共同标签数 / 当前文章标签数。
+ * 得分相同则按日期倒序（新的优先）。
+ */
+const scored = posts
+  .map((post) => {
+    const shared = post.data.tags.filter((tag) => currentTags.includes(tag));
+    return { post, score: shared.length / Math.max(1, currentTags.length), shared };
+  })
+  .filter((item) => item.score > 0)
+  .sort((a, b) => b.score - a.score || b.post.data.date.getTime() - a.post.data.date.getTime())
+  .slice(0, limit);
+---
+
+{
+  scored.length > 0 && (
+    <section class="related" aria-labelledby="related-title">
+      <h2 id="related-title" class="related__title">相关阅读</h2>
+      <ul class="related__list">
+        {scored.map(({ post, shared }) => (
+          <li class="related__item card card-hover">
+            <a href={`/blog/${post.id}/`} class="related__link">
+              <span class="related__date">
+                <time datetime={toISO(post.data.date)}>{formatDateShort(post.data.date)}</time>
+              </span>
+              <span class="related__name">{post.data.title}</span>
+              {shared.length > 0 && (
+                <span class="related__tags">
+                  {shared.map((tag) => (
+                    <span class="related__tag">{tag}</span>
+                  ))}
+                </span>
+              )}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+<style>
+  .related {
+    margin-top: var(--space-7);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--border);
+  }
+
+  .related__title {
+    font-size: 1.125rem;
+    margin: 0 0 var(--space-4);
+  }
+
+  .related__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .related__item {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .related__link {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: var(--space-4);
+  }
+
+  .related__date {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .related__name {
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--text-strong);
+    line-height: 1.5;
+  }
+
+  .related__link:hover .related__name {
+    color: var(--accent);
+  }
+
+  .related__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-top: 0.15rem;
+  }
+
+  .related__tag {
+    font-size: 0.6875rem;
+    padding: 0.1em 0.5em;
+    border-radius: 999px;
+    color: var(--text-muted);
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
+  }
+</style>

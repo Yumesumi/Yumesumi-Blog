@@ -76,7 +76,7 @@ ls dist/tags/                                             # 中文目录名，�
 
 ---
 
-## 六个必须知道的坑
+## 八个必须知道的坑
 
 这些都真实踩过，动手前先看一遍。
 
@@ -130,6 +130,36 @@ Astro 7 的 `DataEntry` 里 `body?: string`，glob loader **不保证填充**。
 （`Cannot read properties of undefined`）。
 
 正文原文要从页面层显式传给布局，并做空值兜底。
+
+### 7. 配置文件里不能静态 import 依赖 `astro:content` 的模块
+
+`astro.config.mjs` 在 Astro 初始化**之前**被加载，此时 `astro:content`
+虚拟模块还不存在。若配置文件（哪怕是间接）静态 import 了依赖它的模块，
+会直接失败：
+
+```text
+Unable to load your Astro config
+Cannot find module 'astro:content' imported from src/lib/posts.ts
+```
+
+因此：**新的构建插件不要静态 import 业务模块。**
+
+搜索索引最初就是写成插件的，踩了这个坑 —— 改用
+`src/pages/search-index.json.ts` 这个 endpoint 后正常：
+endpoint 由 Astro 正常编译，能访问 `astro:content`，
+且资源路径自动适配「根路径 / 子路径」两种访问方式。
+
+### 8. JS 里不能用绝对路径 fetch 站内资源
+
+`relative-base` 插件只改写 HTML 里的 `href`/`src` 属性，
+**JS 里的 `fetch('/xxx')` 不会被改写**。子路径访问时会 404。
+
+```js
+fetch('/search-index.json')                    // ✗ 子路径下 404
+new URL('../search-index.json', location.href)  // ✓ 从当前页面上溯
+```
+
+同理，`robots.txt` 里的 `Sitemap:` 用绝对 URL 反而是对的（那是给爬虫看的）。
 
 ---
 

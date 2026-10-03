@@ -2,10 +2,12 @@
 import type { MarkdownHeading } from 'astro';
 import type { Post } from '../lib/posts';
 import { estimateReadingMinutes, formatDateLong, toISO } from '../lib/format';
+import { postCover } from '../lib/posts';
 import BaseLayout from './BaseLayout.astro';
 import TableOfContents from '../components/TableOfContents.astro';
 import TagPill from '../components/TagPill.astro';
 import CodeCopyButton from '../components/CodeCopyButton.astro';
+import RelatedPosts from '../components/RelatedPosts.astro';
 import BackToTop from '../components/BackToTop.astro';
 
 export interface Props {
@@ -15,9 +17,12 @@ export interface Props {
   body?: string;
   prevPost?: Post;
   nextPost?: Post;
+  /** 相关推荐，由页面层算好传入 */
+  related?: Post[];
 }
 
-const { post, headings, body = '', prevPost, nextPost } = Astro.props satisfies Props;
+const { post, headings, body = '', prevPost, nextPost, related = [] } =
+  Astro.props satisfies Props;
 const { title, description, date, tags, pinned } = post.data;
 
 const readingMinutes = estimateReadingMinutes(body);
@@ -31,6 +36,10 @@ const hasToc = tocItems.length > 0;
   description={description}
   ogType="article"
   publishedTime={date}
+  modifiedTime={date}
+  ogImage={postCover(post)}
+  tags={tags}
+  jsonLdType="BlogPosting"
 >
   <div class="container post-page">
     <a href="/" class="post-page__back">← 返回文章列表</a>
@@ -86,6 +95,8 @@ const hasToc = tocItems.length > 0;
             </nav>
           )
         }
+
+        <RelatedPosts currentTags={tags} posts={related} />
       </div>
 
       <aside class="post-grid__side">

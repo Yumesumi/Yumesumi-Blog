@@ -1,0 +1,51 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SearchBox from '../components/SearchBox.astro';
+---
+
+<BaseLayout title="搜索" description="搜索梦澄博客的全部文章。">
+  <div class="container search-page">
+    <header class="search-page__header">
+      <h1 class="search-page__title">搜索</h1>
+      <p class="search-page__subtitle">输入关键词，按标题、摘要、标签或正文匹配。</p>
+    </header>
+
+    <SearchBox />
+
+    <noscript>
+      <p class="search-page__noscript">
+        搜索功能需要 JavaScript。你也可以直接<a href="/tags/">按标签浏览</a>。
+      </p>
+    </noscript>
+  </div>
+</BaseLayout>
+
+<style>
+  .search-page {
+    max-width: var(--max-width);
+  }
+
+  .search-page__header {
+    margin-bottom: var(--space-5);
+  }
+
+  .search-page__title {
+    font-size: 1.75rem;
+    margin: 0 0 0.35rem;
+  }
+
+  .search-page__subtitle {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.9375rem;
+  }
+
+  .search-page__noscript {
+    margin-top: var(--space-5);
+    padding: var(--space-4);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    color: var(--text-muted);
+    font-size: 0.9375rem;
+  }
+</style>

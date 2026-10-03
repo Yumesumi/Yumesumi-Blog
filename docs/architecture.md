@@ -34,8 +34,10 @@
 src/
 ├── content.config.ts     内容集合定义（blog + pages）
 ├── lib/                  ★ 纯逻辑，无框架依赖，可单测
-│   ├── posts.ts            查询文章、统计标签、标签路径
-│   └── format.ts           日期格式化、阅读时长估算
+│   ├── posts.ts            查询文章、统计标签、标签路径、分享图
+│   ├── format.ts           日期格式化、阅读时长估算
+│   ├── site.ts             站点常量、绝对 URL 工具
+│   └── search-index.ts     搜索索引生成
 ├── plugins/
 │   └── relative-base.ts    构建后改写路径（见决策 1）
 ├── styles/               全局 CSS，分 4 个文件
@@ -46,7 +48,7 @@ src/
 ├── layouts/
 │   ├── BaseLayout.astro    唯一持有 <html>；SEO、主题脚本、背景光晕
 │   └── PostLayout.astro    文章专用：头部信息 + TOC 侧栏 + 文末导航
-├── components/           8 个组件，全部无状态
+├── components/           10 个组件，全部无状态
 ├── pages/                路由
 └── content/              ★ Markdown 内容（写文章改这里）
     ├── blog/<slug>/index.md

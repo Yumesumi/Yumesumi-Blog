@@ -1,4 +1,6 @@
+import { existsSync } from 'node:fs';
 import { getCollection, type CollectionEntry } from 'astro:content';
+import { DEFAULT_OG_IMAGE } from './site';
 
 /**
  * 内容查询与处理的公共逻辑。
@@ -64,4 +66,30 @@ export function countTags(posts: Post[]): Map<string, number> {
  */
 export function tagPath(tag: string): string {
   return `/tags/${encodeURIComponent(tag)}/`;
+}
+
+/**
+ * 取文章的分享图（站内绝对路径），没有则返回 undefined。
+ *
+ * ## 为什么不用文章内容目录里的 cover.svg
+ *
+ * 正文里的图片会被 Astro 优化，最终落成 `_astro/cover.<hash>.svg` ——
+ * 哈希由内容计算得出，**构建前无法预知**。而 og:image 需要一个
+ * 稳定、可预测、能长期有效的 URL（社交平台会长期缓存抓取结果）。
+ *
+ * 所以分享图走另一条路：放在 `public/blog/<slug>/cover.svg`，
+ * 该目录原样拷贝到产物，路径可预测。
+ *
+ * 没有分享图时回退到站点默认图，不会出现死链。
+ */
+export function postCover(post: Post): string | undefined {
+  const slug = post.id;
+  return existsSync(`public/blog/${slug}/cover.svg`)
+    ? `/blog/${slug}/cover.svg`
+    : undefined;
+}
+
+/** 取文章的配图，缺省回退到站点默认分享图。 */
+export function postOgImageUrl(post: Post): string {
+  return postCover(post) ?? DEFAULT_OG_IMAGE;
 }

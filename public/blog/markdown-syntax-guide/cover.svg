@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="星云紫渐变示意">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1A1035"/>
+      <stop offset="55%" stop-color="#2A1550"/>
+      <stop offset="100%" stop-color="#1A1035"/>
+    </linearGradient>
+    <radialGradient id="glow1" cx="0.22" cy="0.28" r="0.62">
+      <stop offset="0%" stop-color="#A855F7" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#A855F7" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow2" cx="0.82" cy="0.76" r="0.58">
+      <stop offset="0%" stop-color="#EC4899" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#EC4899" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#glow1)"/>
+  <rect width="1200" height="630" fill="url(#glow2)"/>
+  <g fill="#EDE9FE" font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif" text-anchor="middle">
+    <text x="600" y="292" font-size="72" font-weight="500" letter-spacing="4">星云紫</text>
+    <text x="600" y="352" font-size="26" fill="#B4A7D6">深紫夜空 · 粉紫光晕 · 实色正文区</text>
+  </g>
+</svg>
