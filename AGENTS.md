@@ -1,0 +1,246 @@
+# AGENTS.md
+
+给后续在这个项目上工作的 AI Agent（或人）的接手指南。
+读完这一份就能安全动手，不用先翻其他文件猜上下文。
+
+---
+
+## 项目是什么
+
+个人博客，**https://yumesumi.cyou/**，Astro 7 纯静态站点，托管在 GitHub Pages。
+源码 https://github.com/Yumesumi/Yumesumi-Blog（**必须保持 public**）。
+
+技术栈与设计决策详见 [docs/architecture.md](docs/architecture.md)，本文只讲怎么干活。
+
+---
+
+## 环境准备
+
+```bash
+# Node 22.12+（项目锁 22.22.2，见 .nvmrc）
+export PATH="/c/Users/Yumesumi/.workbuddy/binaries/node/versions/22.22.2-3:$PATH"
+node -v   # 应输出 v22.22.2
+```
+
+Windows 上用 **Git Bash**。注意 Git Bash 会把 `/Yumesumi-Blog` 这类参数
+当路径转换，传给 node 脚本时要加：
+
+```bash
+export MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*'
+```
+
+npm 默认源已配 `npmmirror`（`~/.npmrc`）。
+
+---
+
+## 常用命令
+
+| 命令 | 用途 |
+| --- | --- |
+| `npm run dev` | 本地开发服务器 → http://localhost:4321 |
+| `npm run check` | TypeScript 类型检查（不产出文件） |
+| `npm run build` | 构建到 `dist/` |
+| `npm run verify` | **check + build**，提交前跑这个 |
+| `npm run preview` | 预览 `dist/` 的真实效果 |
+| `bash scripts/new-post.sh "标题" 标签` | 生成新文章骨架 |
+
+推送（本机有 SOCKS5 代理，GitHub 必须走代理）：
+
+```bash
+git add -A
+git commit -m "..."
+git -c http.proxy=socks5://127.0.0.1:10808 push
+```
+
+> 代理参数**不要**写进 git 全局配置 —— 用户代理不是常开，写死会在
+> 代理关闭时弄坏 git。用一次性 `-c` 参数。
+
+---
+
+## 提交前必须做的
+
+```bash
+npm run verify        # 0 errors 才能提交
+```
+
+改了 `src/plugins/relative-base.ts` 或任何影响 URL 生成的地方，额外验证：
+
+```bash
+npm run build
+grep -o 'href="[^"]*\.css"' dist/index.html              # 应为 ./_astro/...
+grep -o 'href="[^"]*\.css"' dist/blog/*/index.html        # 应为 ../../_astro/...
+grep -o 'rel="canonical" href="[^"]*"' dist/index.html     # 应无 /Yumesumi-Blog 前缀
+grep -o 'https://[^<]*' dist/sitemap-0.xml | head -3      # 应全为 https://yumesumi.cyou/
+ls dist/tags/                                             # 中文目录名，未被编码
+```
+
+---
+
+## 六个必须知道的坑
+
+这些都真实踩过，动手前先看一遍。
+
+### 1. Astro 7 的 API 和网上教程不一致
+
+网上教程（含 AI 生成的方案）几乎全是 Astro 4/5 写法，照抄会报错。
+
+| 旧写法（≤5） | Astro 7 正确写法 |
+| --- | --- |
+| `src/content/config.ts` | `src/content.config.ts`（在 `src/` 下，不在 `src/content/` 里） |
+| `type: 'content'` | 删除，改用 `loader: glob({...})` |
+| `post.render()` | `render(post)`，从 `astro:content` 导入 |
+| `post.slug` | `post.id`；schema 里**禁用** `slug` 字段 |
+| `import { z } from 'astro:content'` | `from 'astro/zod'` |
+| `shikiConfig: { theme }` | `shikiConfig: { themes: { light, dark } }` |
+
+### 2. glob loader 必须配 `generateId`
+
+不配的话 `index.md` 不会被折叠成父目录名，URL 变成 `/blog/xxx/index/`。
+**不会报错**，只是 URL 变难看，很容易漏。
+
+`src/content.config.ts` 里第一行 `.replace(/\\/g, '/')` 是 **Windows 必需**。
+
+### 3. Astro 7 的 Sätteri 管线不消费 rehype 插件，且**静默失效**
+
+不报错、不警告、效果直接消失。
+
+需要 rehype 插件时必须装 `@astrojs/markdown-remark` 并显式配
+`processor: unified({...})`。当前方案是零插件，TOC 手渲，不受影响。
+
+### 4. `base` 必须是字面量
+
+```js
+base: BUILD_BASE          // ✗ Astro 静态分析拿不到，会得到 undefined
+base: '/Yumesumi-Blog'    // ✓ 字面量
+```
+
+### 5. `getStaticPaths` 的 `params` 不能手动编码
+
+```js
+params: { tag: encodeURIComponent(tag) }   // ✗ 双重编码，NoMatchingStaticPathFound
+params: { tag }                            // ✓ Astro 自己会编码
+```
+
+`encodeURIComponent` 只用在**生成链接**的地方（`lib/posts.ts` 的 `tagPath`）。
+
+### 6. `post.body` 是可选字段
+
+Astro 7 的 `DataEntry` 里 `body?: string`，glob loader **不保证填充**。
+直接 `estimateReadingMinutes(post.body)` 会在构建时崩
+（`Cannot read properties of undefined`）。
+
+正文原文要从页面层显式传给布局，并做空值兜底。
+
+---
+
+## 改代码时的约定
+
+### 分层
+
+```text
+pages/       路由与组装
+  ↓
+layouts/     页面骨架
+  ↓
+components/  无状态 UI（props 进，slot 出）
+  ↓
+lib/         纯逻辑，不依赖 Astro 运行时
+```
+
+**业务逻辑放 `lib/`，不要堆在组件里。** 判断标准：这段逻辑换个页面还用得上吗？
+用得上就放 `lib/`。已经有两个共享模块：
+
+- `lib/posts.ts` —— 文章查询、标签统计、标签路径
+- `lib/format.ts` —— 日期格式化、阅读时长
+
+重构前草稿过滤在 5 个页面各写一遍、日期格式化写了 2 份（参数还不一致），
+就是因为没遵守这条。**新逻辑先找 `lib/` 有没有现成函数。**
+
+### 组件写法
+
+```astro
+---
+interface Props {
+  post: Post;
+  showSomething?: boolean;
+}
+const { post, showSomething = false } = Astro.props satisfies Props;
+---
+<slot />
+<style>/* Astro 自动 scope */</style>
+```
+
+- props 必须用 `satisfies Props` 校验
+- 样式写在组件内 `<style>` 块，共享样式才放 `src/styles/`
+- 组件不要有内部状态
+
+### CSS 约定
+
+- 颜色一律用 `src/styles/theme.css` 的变量，**不要写死色值**
+- 改配色**深浅两套都要改**（浅色不是深色的反转）
+- **`.prose` 正文区必须实色**，不能有 `background-image` / `gradient` /
+  `backdrop-filter`。这是硬性要求，为了中文长文可读性
+- 新增令牌前先 grep 确认没有同名未使用的
+
+### 写内容
+
+- 位置 `src/content/blog/<slug>/index.md`，slug 用英文小写连字符
+- 配图与 `index.md` 同级，正文用 `./cover.png` 引用
+- **图片必须真实存在**，否则构建报 `ImageNotFound` 整个失败
+- 必填字段 `title`、`date`
+- 改关于页编辑 `src/content/pages/about.md`
+
+---
+
+## 验证清单
+
+改完代码后按需检查：
+
+```bash
+npm run verify                                    # 必做
+
+# 视觉/交互改动，用真实浏览器验证
+npm run build && npm run preview                  # 另开终端
+```
+
+浏览器验证要点（可用 Playwright）：
+
+- 正文区 `getComputedStyle(.prose).backgroundImage === 'none'`
+- 深浅两套主题下对比度 ≥ 4.5:1
+- 刷新无 FOUC（首帧就是正确主题）
+- TOC 每条链接都能跳转，且 TOC 不在 `.prose` 内部
+- 站内链接点击后 200，无 404
+
+---
+
+## 部署相关
+
+- **仓库必须 public**：免费版 GitHub Pages 不支持私有仓库，
+  设 private 会让站点立刻不可用
+- **Pages Source 必须是 `GitHub Actions`**：不是 gh-pages 分支，
+  官方 action 不产生该分支，设错部署失败
+- 部署工作流：push 到 `main` → Actions 自动构建发布 → 约 1 分钟上线
+- 失败时看 https://github.com/Yumesumi/Yumesumi-Blog/actions
+
+---
+
+## 不要做的事
+
+| 别做 | 原因 |
+| --- | --- |
+| 删掉 `relative-base` 插件 | 会导致 github.io 回退地址样式全失 |
+| 给 `base` 加条件判断 | Astro 静态分析拿不到变量值 |
+| 在 `.prose` 上加渐变 | 违反中文可读性硬性要求 |
+| 改 `theme.css` 只改一套 | 另一套会不协调 |
+| 删 `CodeCopyButton` 里的 `execCommand` 降级 | 非 HTTPS 环境唯一可用的复制方式 |
+| 把代理写进 git 全局配置 | 用户代理非常开，会弄坏 git |
+| 手动改 `public/CNAME` 加换行 | Pages 域名设置会失败 |
+
+---
+
+## 长期待办
+
+- **约 3 个月后回访** `https://yumesumi.cyou/` 确认证书状态
+  （Cloudflare 橙云会影响 GitHub 证书续期，见 `docs/force-https.md`）
+- 引入测试框架（目前只有构建期校验，无单元测试）
+- 归档页（当时明确不做，需要时可加 `src/pages/archive.astro`）

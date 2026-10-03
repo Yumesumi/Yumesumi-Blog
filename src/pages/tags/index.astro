@@ -1,8 +1,9 @@
 ---
-import { getTagCounts, getPublishedPosts, tagPath } from '../../lib/posts';
+import { getPublishedPosts, countTags, tagPath } from '../../lib/posts';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
-const [tags, posts] = await Promise.all([getTagCounts(), getPublishedPosts()]);
+const posts = await getPublishedPosts();
+const tags = countTags(posts);
 const maxCount = tags.size > 0 ? Math.max(...tags.values()) : 1;
 ---
 

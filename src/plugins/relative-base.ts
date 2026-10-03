@@ -58,7 +58,7 @@ const SITE_ROOT = '/';
  * toRelativeUrl('', '/favicon.svg')                                // './favicon.svg'
  * toRelativeUrl('blog', '/')                                       // '../'
  */
-export function toRelativeUrl(fromDir: string, targetPath: string): string {
+function toRelativeUrl(fromDir: string, targetPath: string): string {
   // 若带 base 前缀，先剥掉，得到站点内的绝对路径
   let siteAbsolute = targetPath;
   if (siteAbsolute === BUILD_BASE) {

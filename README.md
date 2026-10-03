@@ -1,7 +1,17 @@
 # 梦澄博客
 
 用 [Astro](https://astro.build/) 搭建的纯静态博客，托管在 GitHub Pages 上。
-域名：[yumesumi.cyou](https://yumesumi.cyou/)
+**线上地址：[yumesumi.cyou](https://yumesumi.cyou/)**
+
+## 文档索引
+
+| 文档 | 内容 |
+| --- | --- |
+| 本文 | 快速开始、写文章、部署与域名配置 |
+| [docs/architecture.md](docs/architecture.md) | 模块职责、关键设计决策及取舍理由 |
+| [AGENTS.md](AGENTS.md) | 接手指南：开发约定、常用命令、踩过的坑 |
+| [docs/force-https.md](docs/force-https.md) | HTTPS 配置与 SSL 模式陷阱 |
+| [docs/cloudflare-dns-setup.md](docs/cloudflare-dns-setup.md) | Cloudflare DNS 配置步骤 |
 
 ---
 
@@ -10,11 +20,17 @@
 ```bash
 npm install     # 安装依赖
 npm run dev     # 本地预览 → http://localhost:4321
+npm run check   # 类型检查
 npm run build   # 构建，产物在 dist/
 npm run preview # 预览构建结果
 ```
 
+提交前建议跑 `npm run verify`（= check + build）。
+
 需要 Node.js 22.12 或更高版本（推荐 22.22.2，见 `.nvmrc`）。
+
+Windows 上用 **Git Bash**。若要把 `/Yumesumi-Blog` 这类参数传给 node 脚本，
+需先 `export MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*'`（Git Bash 会误做路径转换）。
 
 ---
 
@@ -86,8 +102,8 @@ bash scripts/new-post.sh "标题" 标签
 # 2. 本地预览（可选，浏览器打开 http://localhost:4321）
 npm run dev
 
-# 3. 验证构建无误（会校验 frontmatter）
-npm run build
+# 3. 校验（类型检查 + 构建，会验证 frontmatter）
+npm run verify
 
 # 4. 提交并推送 → 网站自动更新，约 1 分钟上线
 git add -A
@@ -312,20 +328,33 @@ Cloudflare 收到重定向又转发回来，会形成**无限重定向循环**�
 ```text
 .
 ├── .github/workflows/deploy.yml    # 部署工作流
-├── astro.config.mjs                # 站点配置（域名、sitemap、代码高亮主题）
+├── astro.config.mjs                # 站点配置（域名、base、sitemap、高亮主题）
+├── AGENTS.md                       # 接手指南：约定、命令、坑
+├── docs/                           # 架构与运维文档
+├── scripts/new-post.sh             # 新文章脚手架
 ├── public/
-│   ├── CNAME                       # 自定义域名
+│   ├── CNAME                       # 自定义域名（单行，勿加换行）
 │   └── favicon.svg
 └── src/
-    ├── content.config.ts           # 文章/页面的数据结构校验
-    ├── content/
-    │   ├── blog/<slug>/index.md    # 文章（每篇一个文件夹）
-    │   └── pages/about.md          # 关于页
-    ├── styles/                     # 全局样式与主题变量
-    ├── layouts/                    # 页面骨架
-    ├── components/                 # 可复用组件
+    ├── content.config.ts           # 内容集合定义（schema 校验）
+    ├── lib/                        # 纯逻辑，不依赖 Astro 运行时
+    │   ├── posts.ts                  文章查询、标签统计、标签路径
+    │   └── format.ts                 日期格式化、阅读时长估算
+    ├── plugins/
+    │   └── relative-base.ts          构建后把路径改写为文档相对路径
+    ├── content/                    # ★ Markdown 内容（写文章改这里）
+    │   ├── blog/<slug>/index.md      每篇文章一个文件夹
+    │   └── pages/about.md            关于页
+    ├── styles/                     # global / theme / prose / shiki
+    ├── layouts/                    # BaseLayout、PostLayout
+    ├── components/                 # 8 个无状态组件
     └── pages/                      # 路由
 ```
+
+分层原则：`pages` → `layouts` → `components` → `lib`。
+**业务逻辑放 `lib/`，不要堆在组件里。**
+
+详细说明见 [docs/architecture.md](docs/architecture.md)。
 
 ---
 
@@ -339,9 +368,15 @@ Cloudflare 收到重定向又转发回来，会形成**无限重定向循环**�
   首次访问跟随系统。防闪烁脚本内联在 `<head>` 最前面同步执行
 - **正文可读性**：页面底层是星云光晕，正文区域是**实色背景**，
   不承载任何渐变，保证长文阅读不受背景干扰
+- **双地址兼容**：插件在构建后把绝对路径改写为文档相对路径，
+  所以 `yumesumi.cyou` 和 `github.io/Yumesumi-Blog/` 都能正常显示，
+  域名切换不需要改配置
 
 ### 改配色
 
 所有颜色都是 CSS 变量，在 `src/styles/theme.css` 里定义。
 深浅两套色分开写（浅色不是深色的反转值），
 改的时候两处都要改，避免出现某个颜色只在浅色下不协调的情况。
+
+新增 CSS 变量前先 grep 确认没有同名未使用的，避免又攒下死代码。
+

@@ -33,9 +33,14 @@ export async function getPublishedPostsPinnedFirst(): Promise<Post[]> {
   return posts.sort((a, b) => Number(b.data.pinned) - Number(a.data.pinned));
 }
 
-/** 统计所有标签及各自文章数，按数量降序、名称升序。 */
-export async function getTagCounts(): Promise<Map<string, number>> {
-  const posts = await getPublishedPosts();
+/**
+ * 统计标签及各自文章数，按数量降序、名称升序。
+ *
+ * 入参是已加载好的文章列表，而不是自己再去读一遍内容 ——
+ * 调用方通常同时需要「文章列表」和「标签统计」，
+ * 让这个函数自己调 getCollection 会重复读取内容。
+ */
+export function countTags(posts: Post[]): Map<string, number> {
   const counts = new Map<string, number>();
 
   for (const post of posts) {
