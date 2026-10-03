@@ -1,9 +1,36 @@
-# Cloudflare DNS 配置步骤（照着点）
+# Cloudflare DNS 配置步骤（已完成，留作参考）
 
-域名 `yumesumi.cyou` 目前 `@` 有一条 **A 记录**（Spaceship 自动加的停放页），
+> ✅ **配置已于 2026-10-03 完成**，主地址 https://yumesumi.cyou/ 已正常访问。
+> 这份文档保留下来，记录配置步骤和容易踩的坑。
+
+域名 `yumesumi.cyou` 的 `@` 原本有一条 **A 记录**（Spaceship 自动加的停放页），
 和 CNAME 冲突，所以要先删掉再换。
 
 预计耗时 3~5 分钟，其中等证书签发要 10~30 分钟。
+
+---
+
+## ⚠️ 两个容易踩的坑
+
+**1. Cloudflare 会把根域 CNAME「平铺」成 A 记录**
+
+配好 CNAME 后，用 `nslookup -type=A yumesumi.cyou` 查到的仍然是 Cloudflare 的 IP
+（如 `104.21.55.201`），**看不到** `yumesumi.github.io`。
+
+这是 Cloudflare 的正常行为（免费版 CNAME flattening），
+不代表配置失败。判断是否配对要看 HTTP 响应头：
+
+```bash
+curl -sI https://yumesumi.cyou/ | grep x-github-request-id
+```
+
+有 `x-github-request-id` 就说明请求已到达 GitHub Pages，链路是通的。
+
+**2. `https://yumesumi.github.io/` 是 404，不是站点**
+
+GitHub Pages 的子路径地址是 `https://yumesumi.github.io/Yumesumi-Blog/`。
+裸的 `yumesumi.github.io` 是账号主页，没有站点就会显示
+`There isn't a GitHub Pages site here`。
 
 ---
 

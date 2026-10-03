@@ -98,11 +98,19 @@ pinned: false                 # 选填，true 时在列表置顶
 
 ## 域名配置
 
-站点域名是 `yumesumi.cyou`，托管在 Cloudflare。
+站点域名是 **[yumesumi.cyou](https://yumesumi.cyou/)**，托管在 Cloudflare。
+
+| 地址 | 状态 |
+| --- | --- |
+| `https://yumesumi.cyou/` | ✅ 主地址 |
+| `https://yumesumi.github.io/Yumesumi-Blog/` | ✅ 回退地址（同样正常显示） |
+| `https://yumesumi.github.io/` | ❌ 这是 GitHub 用户主页，不是站点 |
 
 ### GitHub 侧（已完成）
 
-`public/CNAME` 文件里写着 `yumesumi.cyou`，每次部署会自动带上。
+- `public/CNAME` 文件里写着 `yumesumi.cyou`，每次部署会自动带上
+- 仓库 Settings → Pages 的 Custom domain 已填 `yumesumi.cyou`（证书已签发）
+- Build and deployment → Source 选 `GitHub Actions`
 
 ### 首次部署时启用 Pages
 
@@ -113,17 +121,12 @@ pinned: false                 # 选填，true 时在列表置顶
 > 官方部署工作流通过 Actions 上传产物，不会创建 `gh-pages` 分支，
 > 两者是互斥的，设错会导致部署失败。
 
-### Cloudflare 侧（需要你操作）
+### Cloudflare 侧（已完成）
 
-> 📖 **详细分步操作见 [docs/cloudflare-dns-setup.md](docs/cloudflare-dns-setup.md)**，
-> 包含每一步点哪里、常见报错怎么处理。
-
-简版：
-
-1. **先删掉现有的 A 记录** —— `@` 目前有一条 Spaceship 自动加的停放页 A 记录，
+1. 删掉了原有的 A 记录（Spaceship 自动加的停放页），
    Cloudflare 不允许 A/AAAA 与 CNAME 共存，不删会报
    `An A, AAAA, or CNAME record with that host already exists`
-2. **DNS → Records → Add record**，添加：
+2. **DNS → Records** 添加：
 
 | 类型 | 名称 | 目标 | TTL | 代理状态 |
 | --- | --- | --- | --- | --- |
@@ -132,7 +135,9 @@ pinned: false                 # 选填，true 时在列表置顶
 3. **SSL/TLS → 概述 → 加密模式** 设为 **`完全（Full）`**
 4. **SSL/TLS → 边缘证书 → 始终使用 HTTPS** 开启
 
-证书签发需要 10~30 分钟，期间站点可能暂时打不开，属正常现象。
+> **注意**：Cloudflare 会在 DNS 层把根域 CNAME「平铺」成 A 记录，
+> 所以用 `nslookup -type=A` 查不到 `yumesumi.github.io` 是正常的，
+> 不代表配置有误。判断是否配对要看 HTTP 响应头有没有 `x-github-request-id`。
 
 **SSL/TLS → 边缘证书：**
 
