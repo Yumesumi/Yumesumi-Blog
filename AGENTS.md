@@ -43,6 +43,8 @@ npm 默认源已配 `npmmirror`（`~/.npmrc`）。
 | `npm run verify` | **check + build**，提交前跑这个 |
 | `npm run preview` | 预览 `dist/` 的真实效果 |
 | `bash scripts/new-post.sh "标题" 标签` | 生成新文章骨架 |
+| `node scripts/gen-test-posts.mjs` | 生成 30 篇搜索测试数据（临时） |
+| `node scripts/verify-search.mjs` | 跑搜索断言（需先 build） |
 
 推送（本机有 SOCKS5 代理，GitHub 必须走代理）：
 
@@ -291,9 +293,51 @@ npm run build && npm run preview                  # 另开终端
 
 ---
 
+## ⚠️ 搜索测试数据（临时，测完请清理）
+
+`src/content/blog/test-post-01` … `test-post-30` 是搜索功能测试数据，
+**不是正式内容**。它们会被搜索引擎收录，正式发布前应清理掉。
+
+```bash
+# 清理：删掉全部 30 篇测试文章
+node scripts/gen-test-posts.mjs --clean
+
+# 清理后必须重新构建，否则 dist 和线上仍有这些页面
+npm run build
+
+git add -A && git commit -m "chore: 移除搜索测试数据" && \
+  git -c http.proxy=socks5://127.0.0.1:10808 push
+```
+
+**判断是否为测试数据**：目录名以 `test-post-` 开头。正式文章不会有这个前缀。
+
+### 这些数据的价值
+
+想验证搜索改动是否破坏了功能时，可以重新生成：
+
+```bash
+node scripts/gen-test-posts.mjs    # 生成 30 篇
+npm run build
+node scripts/verify-search.mjs    # 跑 42 项断言
+```
+
+`scripts/verify-search.mjs` 校验 7 类场景：唯一标记词精确命中、
+英文大小写不敏感、标签召回、多关键词组合、无结果、
+边界情况数据完整性、页面已生成。
+
+**测试数据的设计要点**（改脚本时注意）：每篇带一个唯一标记词
+（如「紫石英」），搜它必须命中对应文章 —— 这样能验证**精度**，
+而不只是"能搜到东西"。若正文里互相提到对方的标记词，
+唯一性就失效了，精确度测试也就失去意义。
+
+刻意保留一组共享标记词（「星云」两篇），用于验证同分时的排序稳定性。
+
+---
+
 ## 长期待办
 
 - **约 3 个月后回访** `https://yumesumi.cyou/` 确认证书状态
   （Cloudflare 橙云会影响 GitHub 证书续期，见 `docs/force-https.md`）
-- 引入测试框架（目前只有构建期校验，无单元测试）
+- 引入测试框架（目前只有构建期校验与 `verify-search.mjs`，无单元测试）
 - 归档页（当时明确不做，需要时可加 `src/pages/archive.astro`）
+- **清理搜索测试数据**（见上一节，测完就删）
