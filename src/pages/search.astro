@@ -40,12 +40,27 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           data-search-input
           enterkeyhint="search"
         />
-        <button class="search__clear" type="button" data-search-clear hidden aria-label="清空搜索">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" aria-hidden="true">
-            <path d="M6 6l12 12M18 6L6 18"></path>
-          </svg>
-        </button>
+        <div class="search__actions">
+          <button
+            class="search__clear"
+            type="button"
+            data-search-clear
+            hidden
+            aria-label="清空搜索"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" aria-hidden="true">
+              <path d="M6 6l12 12M18 6L6 18"></path>
+            </svg>
+          </button>
+          <button class="search__submit" type="submit" aria-label="开始搜索">
+            <span class="search__submit-text">搜索</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M5 12h14M13 6l6 6-6 6"></path>
+            </svg>
+          </button>
+        </div>
       </div>
     </form>
 
@@ -261,7 +276,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
   .search__input {
     width: 100%;
-    padding: 0.75rem 2.5rem;
+    /* 右侧留出操作按钮区域 */
+    padding: 0.75rem 7rem 0.75rem 2.5rem;
     font-size: 1rem;
     font-family: inherit;
     color: var(--text);
@@ -281,12 +297,15 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   }
 
   .search__clear {
-    position: absolute;
-    right: 0.6rem;
     display: inline-flex;
-    padding: 0.3rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0.35rem;
     color: var(--text-muted);
+    background: transparent;
+    border: 0;
     border-radius: 6px;
+    cursor: pointer;
   }
 
   .search__clear:hover {
@@ -300,6 +319,59 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   .search__clear svg {
     width: 0.95rem;
     height: 0.95rem;
+  }
+
+  /* 清空与提交并排放在输入框右侧 */
+  .search__actions {
+    position: absolute;
+    right: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.15rem;
+  }
+
+  .search__submit {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.4rem 0.7rem;
+    font-size: 0.875rem;
+    font-family: inherit;
+    color: var(--bg-base);
+    background: var(--accent);
+    border: 0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: filter var(--transition);
+  }
+
+  .search__submit:hover {
+    filter: brightness(1.08);
+  }
+
+  .search__submit:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .search__submit svg {
+    width: 0.95rem;
+    height: 0.95rem;
+  }
+
+  /* 窄屏只留图标，隐藏「搜索」文字 */
+  @media (max-width: 30rem) {
+    .search__submit-text {
+      display: none;
+    }
+
+    .search__submit {
+      padding: 0.4rem 0.5rem;
+    }
+
+    .search__input {
+      padding-right: 5.5rem;
+    }
   }
 
   .search__status {

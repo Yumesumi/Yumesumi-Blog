@@ -77,6 +77,8 @@ const current = pathname === '/' ? '/' : `${pathname.replace(/\/$/, '')}/`;
     font-size: 1.0625rem;
     color: var(--text-strong);
     white-space: nowrap;
+    /* 空间不足时优先压缩搜索框，不压缩站名与导航 */
+    flex-shrink: 0;
   }
 
   .site-header__brand:hover {
@@ -98,6 +100,8 @@ const current = pathname === '/' ? '/' : `${pathname.replace(/\/$/, '')}/`;
     display: flex;
     align-items: center;
     gap: var(--space-4);
+    /* 不参与压缩：空间不足时若允许收缩，中文链接会被逐字挤成竖排 */
+    flex-shrink: 0;
   }
 
   .site-header__nav {
@@ -115,6 +119,8 @@ const current = pathname === '/' ? '/' : `${pathname.replace(/\/$/, '')}/`;
     border-radius: 6px;
     font-size: 0.9375rem;
     color: var(--text-muted);
+    /* 中文没有词间空格，不加这行窄屏下会逐字竖排 */
+    white-space: nowrap;
     transition: color var(--transition), background-color var(--transition);
   }
 
@@ -128,14 +134,33 @@ const current = pathname === '/' ? '/' : `${pathname.replace(/\/$/, '')}/`;
     background: color-mix(in srgb, var(--accent) 12%, transparent);
   }
 
-  @media (max-width: 30rem) {
+  /* 窄屏：站名、导航、搜索框、主题按钮要挤进一行，
+     通过收紧内边距与间距来腾空间，避免出现横向滚动 */
+  @media (max-width: 34rem) {
+    .site-header .container {
+      padding-inline: var(--space-3);
+    }
+
+    .site-header__inner {
+      gap: var(--space-2);
+    }
+
+    .site-header__right {
+      gap: var(--space-2);
+    }
+
     .site-header__nav {
       gap: 0;
     }
 
     .site-header__link {
-      padding: 0.4rem 0.5rem;
+      padding: 0.4rem 0.4rem;
       font-size: 0.875rem;
+    }
+
+    .site-header__brand {
+      gap: 0.4rem;
+      font-size: 1rem;
     }
   }
 </style>

@@ -2,9 +2,13 @@
 /**
  * 顶栏搜索框。
  *
- * 宽屏是一个窄输入框，窄屏（≤ 46rem）收成一个图标按钮。
- * 两种形态共用同一个 input —— 靠 CSS 切换宽度与占位符，
+ * 宽屏是一个窄输入框 + 提交按钮，窄屏（≤ 46rem）收成一个图标。
+ * 两种形态共用同一套 DOM —— 靠 CSS 切换宽度与占位符，
  * 不需要 JS 参与布局判断。
+ *
+ * 提交行为：跳到 /search/ 结果列表页，而不是直接进某篇文章。
+ * 原因：搜索命中多篇时直接跳第一篇会掩盖其他结果，
+ * 用户无法确认「是不是只有这一篇」或「换个词会不会更好」。
  */
 ---
 
@@ -34,41 +38,36 @@
     data-hsearch-input
     enterkeyhint="search"
   />
+
+  <button class="hsearch__submit" type="submit" data-hsearch-submit aria-label="搜索">
+    <svg
+      class="hsearch__submit-icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M5 12h14M13 6l6 6-6 6"></path>
+    </svg>
+  </button>
 </form>
 
 <script>
-  import { loadIndex, runSearch, toSiteUrl, type SearchEntry } from '../lib/search-client';
+  import { toSiteUrl } from '../lib/search-client';
 
   const form = document.querySelector<HTMLFormElement>('[data-hsearch-form]');
   const input = document.querySelector<HTMLInputElement>('[data-hsearch-input]');
 
   if (form && input) {
-    let items: SearchEntry[] = [];
-
-    // 索引预热：空闲时加载，用户敲第一下就不用等。
-    // 失败时保持 items 为空，回车会退化为「带关键词去搜索页」，
-    // 由那个页面展示加载失败的原因。
-    loadIndex()
-      .then((data) => {
-        items = data;
-      })
-      .catch(() => {
-        /* 已在下面的降级路径里处理 */
-      });
-
-    form.addEventListener('submit', async (e) => {
+    // 提交一律跳搜索结果页 —— 即便只有一篇命中，也由结果页决定去向。
+    // 这样行为可预期：用户永远先看到"一共找到几篇"。
+    form.addEventListener('submit', (e) => {
       e.preventDefault();
       const query = input.value.trim();
       if (!query) return;
-
-      // 已有结果就跳第一篇，否则带关键词去搜索页看全部
-      if (items.length > 0) {
-        const { matched } = runSearch(items, query);
-        if (matched.length > 0) {
-          location.href = toSiteUrl(matched[0].url);
-          return;
-        }
-      }
 
       const target = new URL(toSiteUrl('/search/'), location.href);
       target.searchParams.set('q', query);
@@ -80,7 +79,7 @@
       if (e.key !== '/' || e.metaKey || e.ctrlKey || e.altKey) return;
       const active = document.activeElement;
       if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) return;
-      // 窄屏下输入框被 CSS 隐藏，此时 / 应去搜索页而不是聚焦隐藏元素
+      // 窄屏下输入框被 CSS 收起，此时 / 应去搜索页而不是聚焦隐藏元素
       if (input.offsetParent === null) return;
       e.preventDefault();
       input.focus();
@@ -106,6 +105,9 @@
     position: relative;
     display: flex;
     align-items: center;
+    /* 空间不足时优先收缩搜索框，导航与站名保持完整 */
+    min-width: 0;
+    flex-shrink: 1;
   }
 
   .hsearch__icon {
@@ -118,8 +120,9 @@
   }
 
   .hsearch__input {
-    width: 10rem;
-    padding: 0.4rem 0.6rem 0.4rem 2rem;
+    width: 8.5rem;
+    /* 右侧留出按钮的位置，避免文字被按钮压住 */
+    padding: 0.4rem 2rem 0.4rem 2rem;
     font-size: 0.8125rem;
     font-family: inherit;
     line-height: 1.4;
@@ -130,7 +133,7 @@
     transition: width var(--transition), border-color var(--transition),
       background-color var(--transition);
 
-    /* 隐藏 WebKit 自带的清除按钮，我们用回车跳转 */
+    /* 隐藏浏览器自带的清除按钮，避免和我们的按钮视觉冲突 */
     -webkit-appearance: none;
     appearance: none;
   }
@@ -148,14 +151,46 @@
     border-color: var(--accent);
     background: var(--surface);
     /* 聚焦时展开，方便看清输入内容 */
-    width: 15rem;
+    width: 14rem;
   }
 
-  /* 窄屏：收成图标 */
+  .hsearch__submit {
+    position: absolute;
+    right: 0.28rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    color: var(--text-muted);
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: color var(--transition), background-color var(--transition);
+  }
+
+  .hsearch__submit:hover {
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+  }
+
+  .hsearch__submit:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  .hsearch__submit-icon {
+    width: 0.9rem;
+    height: 0.9rem;
+  }
+
+  /* 窄屏：收成图标，点一下展开 */
   @media (max-width: 46rem) {
     .hsearch__input {
       width: 2.1rem;
-      padding-right: 0.4rem;
+      /* 收起态文字区压到 0，只留图标可点 */
+      padding-right: 1.9rem;
       cursor: pointer;
     }
 
@@ -164,12 +199,76 @@
     }
 
     .hsearch__input:focus {
-      width: 10rem;
+      width: 9rem;
       cursor: text;
     }
 
     .hsearch__input:focus::placeholder {
       color: var(--text-muted);
+    }
+
+    /* 收起态只留放大镜图标，隐藏提交按钮（两者会重叠）；
+       展开后再显示箭头按钮 */
+    .hsearch:not(:focus-within) .hsearch__submit {
+      display: none;
+    }
+  }
+
+  /* 极窄屏（iPhone SE 等）：搜索框让位给导航，
+     收起时只留放大镜图标，聚焦时展开为铺满 header 的输入框。 */
+  @media (max-width: 22.5rem) {
+    .hsearch {
+      width: 0;
+    }
+
+    .hsearch__input {
+      width: 0;
+      padding: 0;
+      border-color: transparent;
+    }
+
+    .hsearch__icon {
+      /* 收起态只留放大镜，占位 1.5rem */
+      width: 1.5rem;
+      height: 1.5rem;
+      left: 0;
+      z-index: 1;
+    }
+
+    .hsearch__input:focus {
+      /* 用 absolute 而非 fixed：.site-header 上有 backdrop-filter，
+         它会成为 fixed 的包含块，导致 left/right 相对 header 计算，
+         输入框会偏出屏幕（实测 right 算成负值）。
+         absolute 下 left:0/right:0 就是撑满 .hsearch，
+         再让 .hsearch 在聚焦时横跨整行即可。 */
+      position: absolute;
+      left: 0;
+      right: 0;
+      z-index: 30;
+      width: 100%;
+      padding: 0.5rem 2.2rem;
+      background: var(--surface);
+      border-color: var(--accent);
+      border-radius: 999px;
+      box-shadow: 0 4px 16px rgb(0 0 0 / 0.25);
+    }
+
+    /* 聚焦时让搜索框横跨 header 整行 */
+    .hsearch:focus-within {
+      position: absolute;
+      left: 0;
+      right: 0;
+      z-index: 30;
+      width: auto;
+    }
+
+    .hsearch:focus-within .hsearch__icon {
+      left: 0.6rem;
+    }
+
+    /* 展开后隐藏箭头按钮，避免和文字重叠 */
+    .hsearch:focus-within .hsearch__submit {
+      display: none;
     }
   }
 </style>
