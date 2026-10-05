@@ -331,10 +331,12 @@ Cloudflare 收到重定向又转发回来，会形成**无限重定向循环**�
 ├── astro.config.mjs                # 站点配置（域名、base、sitemap、高亮主题）
 ├── AGENTS.md                       # 接手指南：约定、命令、坑
 ├── docs/                           # 架构与运维文档
+│   └── assets/icon-source.png       # 图标设计稿（源文件，不参与构建）
 ├── scripts/new-post.sh             # 新文章脚手架
 ├── public/
 │   ├── CNAME                       # 自定义域名（单行，勿加换行）
-│   └── favicon.svg
+│   ├── favicon.svg                 # 站点图标（顶栏与标签页共用）
+│   └── og-default.svg              # 默认分享图
 └── src/
     ├── content.config.ts           # 内容集合定义（schema 校验）
     ├── lib/                        # 纯逻辑，不依赖 Astro 运行时

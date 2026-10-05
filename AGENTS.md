@@ -78,7 +78,7 @@ ls dist/tags/                                             # 中文目录名，�
 
 ---
 
-## 九个必须知道的坑
+## 十个必须知道的坑
 
 这些都真实踩过，动手前先看一遍。
 
@@ -185,6 +185,31 @@ location.href = toSiteUrl(matched[0].url); // ✓
 
 > 加新的动态链接功能时，先问一句：这个路径是绝对的还是相对的？
 > 站点根绝对路径在子路径下必然出错。
+
+### 10. SVG 注释里不能出现连续的连字符
+
+改 `public/favicon.svg` 时踩过：注释里写了 `--accent`（CSS 变量名），
+**XML 规范禁止注释内出现 `--`**，导致整个 SVG 解析失败。
+
+**症状很有迷惑性**：页面上显示为破图，但
+- `fetch()` 能拿到 200
+- 控制台**没有任何报错**
+- 逐个元素二分测试都正常（因为单独抽出的片段里没有 `--`）
+
+**排查方法**：
+
+```bash
+python -c "
+import xml.etree.ElementTree as ET
+ET.fromstring(open('public/favicon.svg','rb').read().decode('utf-8'))
+print('OK')
+"
+```
+
+报 `not well-formed (invalid token): line N, column M` 就是 XML 非法。
+
+写 SVG 注释时避免连字符，把 CSS 变量名写成 `accent` 或
+`theme.css 里的 accent 变量`。
 
 ---
 

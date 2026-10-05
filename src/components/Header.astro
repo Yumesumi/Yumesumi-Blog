@@ -20,7 +20,7 @@ const current = pathname === '/' ? '/' : `${pathname.replace(/\/$/, '')}/`;
       JS 需要靠这个标记把绝对路径解析成当前站点下可用的地址。
     -->
     <a href="/" class="site-header__brand" data-site-root>
-      <span class="site-header__mark" aria-hidden="true"></span>
+      <img src="/favicon.svg" alt="" width="28" height="28" class="site-header__mark" />
       <span>梦澄博客</span>
     </a>
 
@@ -85,15 +85,18 @@ const current = pathname === '/' ? '/' : `${pathname.replace(/\/$/, '')}/`;
     color: var(--accent);
   }
 
+  /*
+    品牌标记用 favicon.svg，与浏览器标签页图标保持一致。
+    用 img 而非 CSS 渐变：图标是设计好的资产，重复实现一份
+    渐变+边框只会让两者随时间不一致。
+    深浅主题下都能看清 —— 图标本身自带紫粉渐变底。
+  */
   .site-header__mark {
-    width: 1.5rem;
-    height: 1.5rem;
-    border-radius: 50%;
-    background: radial-gradient(circle at 32% 30%, var(--accent) 0%, transparent 62%),
-      radial-gradient(circle at 70% 72%, #ec4899 0%, transparent 58%),
-      var(--surface-raised);
-    border: 1px solid var(--border-strong);
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 7px;
     flex-shrink: 0;
+    display: block;
   }
 
   .site-header__right {
