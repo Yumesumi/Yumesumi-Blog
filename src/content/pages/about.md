@@ -1,6 +1,6 @@
 ---
 title: 关于
-description: 关于梦澄博客 —— 这里是占位内容，换成你自己的介绍。
+description: 关于梦澄博客 —— 记录技术笔记、阅读与思考，以及联系我的方式。
 ---
 
 <!--
@@ -9,15 +9,17 @@ description: 关于梦澄博客 —— 这里是占位内容，换成你自己�
 
 关于页的内容你在 src/content/pages/about.md 里编辑，
 用的是标准 Markdown，不用碰任何代码。
+
+写作提示：
+- 「我是谁」一节请换成你自己的自我介绍 —— 建议写清楚三件事：
+  你是谁、这个博客主要写什么、你可以怎么联系我。
+- 「这个博客写什么」列出内容方向。
+- 「联系方式」里的邮箱和 GitHub 已经是真实地址，可直接改。
 -->
 
 ## 我是谁
 
-<!-- 换成你自己的介绍：叫什么、做什么、平时关注什么。这里支持 **加粗**、*斜体*、`代码` 等语法。 -->
-
 欢迎来到梦澄博客。
-
-> 把这里换成你的自我介绍。建议写清楚三件事：你是谁、这个博客主要写什么、你可以怎么联系我。
 
 ## 这个博客写什么
 
@@ -29,10 +31,8 @@ description: 关于梦澄博客 —— 这里是占位内容，换成你自己�
 
 ## 联系方式
 
-<!-- 换成你的邮箱或社交账号。 -->
-
-- 邮箱：`your-email@example.com`
-- GitHub：`https://github.com/Yumesumi`
+- 邮箱：[YumesumiArikki@outlook.com](mailto:YumesumiArikki@outlook.com)
+- GitHub：[https://github.com/Yumesumi](https://github.com/Yumesumi)
 
 ## 关于这个网站
 
