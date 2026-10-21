@@ -173,6 +173,26 @@ PG(modules_activated) = 0;
 6. **应急响应的正确顺序**：升级到修复版本 → 无法升级则 `memory_limit=-1` + `session.upload_progress.enabled=0`（8.5 加 `fatal_error_backtraces=0`），**并重启所有 worker**——残留状态在 worker 内存里，不重启等于没缓解 → 检查 `.htaccess` / `php_value` / `PHP_VALUE` 通道是否会覆盖管理员的 `php_admin_value`。
 7. **给防御方的检测线索**：Apache 日志中集中于 multipart POST 的 `AH00051: child pid N exit signal Segmentation fault`，以及退出码 137 的 FPM worker（新版硬 OOM 特征）都是高价值信号。
 
+## 六、补充：修复 commit 定位与同批安全修复清单
+
+两个 CVE 的修复集中在一个 commit：**`31c0ea7d7ff1` "Avoid state corruption via bailout"**（319 个 commit 中可精确检索），由多名核心开发者联合署名——PHP 内核顶配阵容，侧面反映官方对这次事件的重视程度。commit 规模 **300 文件**，其中约 130 个是新增 `oom_*.phpt` 回归测试。
+
+**同一发布还打包了 10+ 个独立安全修复**（compare php-8.5.11...php-8.5.12 检索所得），均为优质学习素材：
+
+| Commit | 内容 |
+| --- | --- |
+| dcdfcf86fcf7 | FastCGI allowed_clients 只比较了 IPv6 前 96 位 |
+| 78cc82b37a34 | openssl 通配符证书匹配 OOB read |
+| 114dbb74368e | mysqlnd 线协议多处包越界读 |
+| 5af9465ca890 / 795440a704d4 | curl 重定向时剥离凭据（含边界修复） |
+| 3655b79c7bfa | ext/soap XML 解析无界递归 |
+| 0994e2e887cd | phar tar 条目注入 |
+| f785c3f6ce29 / b11bd1d9390b | 未命名 GHSA 修复 ×2 |
+| 7ac9700d0d46 | FILTER_SANITIZE_ENCODED 编码 0xFF |
+| 4868dd4e0205 / eacd1576adb5 | session create_sid() 失败/异常路径 |
+
+检索方式备忘：php.net 直连和 raw.githubusercontent.com 在本网络环境 TLS 被断，但 `api.github.com` 可用——用 compare API + commit 内容 API 即可拿到全部补丁，无需下载完整源码包。
+
 ## 写在最后
 
 补丁 diff 分析的乐趣在于：漏洞通报告诉你"哪里疼"，补丁告诉你"医生怎么下刀"。这次 PHP 官方的处理相当漂亮——两个 9.2 分的 RCE，根因被收敛成一句 "Avoid state corruption via bailout"，修复方案（延迟 OOM + 硬限 + fallible 分配）是一个体系而非零散补丁。
