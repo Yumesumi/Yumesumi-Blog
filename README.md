@@ -187,8 +187,7 @@ gh api -X PUT repos/Yumesumi/Yumesumi-Blog/pages \
 │   └── verify-search.mjs         # 搜索断言
 ├── public/
 │   ├── CNAME                     # blog.yumesumi.cyou（单行，勿加换行）
-│   ├── favicon.svg               # 站点图标
-│   ├── brand/logo.svg            # 品牌标记（顶栏、页脚、水印共用）
+│   ├── brand/logo.svg            # 品牌标记（favicon、顶栏、页脚、水印共用）
 │   ├── fonts/                    # MiSans 子集 + fonts.css
 │   ├── og-default.png            # 默认分享图（1200×630）
 │   └── blog/<slug>/cover.png     # 每篇文章的分享图

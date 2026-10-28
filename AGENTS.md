@@ -175,13 +175,13 @@ Astro 7 的 `DataEntry` 里 `body?: string`，glob loader **不保证填充**。
 
 ### 12. SVG 注释里不能出现连续的连字符
 
-XML 规范禁止注释内出现 `--`。改 `public/favicon.svg` / `public/brand/logo.svg`
+XML 规范禁止注释内出现 `--`。改 `public/brand/logo.svg`（同时作为 favicon）
 时尤其注意，否则 SVG 解析失败，页面显示破图但控制台无报错。
 
 ```bash
 python -c "
 import xml.etree.ElementTree as ET
-ET.parse('public/favicon.svg'); print('OK')
+ET.parse('public/brand/logo.svg'); print('OK')
 "
 ```
 

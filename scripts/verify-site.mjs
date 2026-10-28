@@ -54,7 +54,6 @@ for (const file of [
   'sitemap-index.xml',
   'sitemap-0.xml',
   'search-index.json',
-  'favicon.svg',
   'og-default.png',
   'fonts/fonts.css',
   'brand/logo.svg',
