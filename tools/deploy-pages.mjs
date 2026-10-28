@@ -15,7 +15,7 @@
  *
  * 用法：npm run deploy
  */
-import { execFileSync } from 'node:child_process';
+import { execFileSync, execSync } from 'node:child_process';
 import { cpSync, existsSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -44,7 +44,8 @@ const git = (args, options) => run('git', args, options);
 
 /* ---------- 1. 构建 ---------- */
 console.log('[deploy] 1/4 构建站点…');
-run('npm', ['run', 'build'], { shell: process.platform === 'win32' });
+// 固定的 npm 脚本命令走 shell；Windows 上 execFile 无法直接执行 npm.cmd
+execSync('npm run build', { cwd: ROOT, stdio: 'inherit' });
 
 if (!existsSync(join(DIST, 'index.html'))) {
   console.error('[deploy] 构建产物缺少 dist/index.html，中止');
