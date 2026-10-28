@@ -1,0 +1,163 @@
+---
+/**
+ * 文章卡片。
+ *
+ * 编号、日期、标题、摘要与标签构成一列信息；hover 时右侧箭头浮现。
+ */
+import type { Post } from '@/lib/posts';
+import { formatDateShort, toISO } from '@/lib/format';
+import TagPill from '@/components/blog/TagPill.astro';
+
+export interface Props {
+  post: Post;
+  /** 列表中的序号，从 0 开始 */
+  index: number;
+}
+
+const { post, index } = Astro.props satisfies Props;
+const { title, description, date, tags, pinned } = post.data;
+---
+
+<article class="post-card ys-card">
+  <span class="post-card__index" aria-hidden="true">
+    {String(index + 1).padStart(2, '0')}
+  </span>
+
+  <div class="post-card__body">
+    <div class="post-card__meta">
+      <time datetime={toISO(date)}>{formatDateShort(date)}</time>
+      {pinned && <span class="post-card__badge">置顶</span>}
+    </div>
+
+    <h2 class="post-card__title">
+      <a href={`/blog/${post.id}/`}>{title}</a>
+    </h2>
+
+    {description && <p class="post-card__desc">{description}</p>}
+
+    {tags.length > 0 && (
+      <div class="post-card__tags">
+        {tags.map((tag) => (
+          <TagPill tag={tag} />
+        ))}
+      </div>
+    )}
+  </div>
+
+  <svg class="post-card__arrow" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+    <path
+      d="M5 12h14M13 6l6 6-6 6"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.4"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    ></path>
+  </svg>
+</article>
+
+<style>
+  .post-card {
+    display: grid;
+    grid-template-columns: 3rem minmax(0, 1fr) auto;
+    align-items: start;
+    gap: var(--ys-space-md);
+    padding: var(--ys-space-lg) var(--ys-space-lg);
+  }
+
+  .post-card:hover {
+    transform: translateY(-2px);
+  }
+
+  .post-card__index {
+    padding-block-start: 0.2rem;
+    font-size: var(--ys-fs-2xs);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: var(--ys-ls-wide);
+    color: var(--ys-text-faint);
+  }
+
+  .post-card__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ys-space-sm);
+    min-width: 0;
+  }
+
+  .post-card__meta {
+    display: flex;
+    align-items: center;
+    gap: var(--ys-space-xs);
+    font-size: var(--ys-fs-2xs);
+    font-variant-numeric: tabular-nums;
+    color: var(--ys-text-muted);
+  }
+
+  .post-card__badge {
+    padding: 0.08em 0.55em;
+    font-size: 0.92em;
+    color: var(--ys-lavender);
+    background-color: color-mix(in srgb, var(--ys-purple) 18%, transparent);
+    border: 1px solid var(--ys-border-strong);
+    border-radius: var(--ys-radius-pill);
+  }
+
+  .post-card__title {
+    font-size: clamp(1.15rem, 1rem + 0.5vw, 1.45rem);
+    font-weight: var(--ys-weight-medium);
+    line-height: var(--ys-lh-snug);
+    letter-spacing: var(--ys-ls-snug);
+  }
+
+  .post-card__title a {
+    transition: color var(--ys-dur-fast) var(--ys-ease-out);
+  }
+
+  .post-card__title a:hover,
+  .post-card__title a:focus-visible {
+    color: var(--ys-lavender);
+  }
+
+  .post-card__desc {
+    max-inline-size: 42rem;
+    color: var(--ys-text-secondary);
+    font-size: var(--ys-fs-sm);
+    line-height: var(--ys-lh-relaxed);
+  }
+
+  .post-card__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-block-start: 0.15rem;
+  }
+
+  .post-card__arrow {
+    margin-block-start: 0.35rem;
+    color: var(--ys-text-faint);
+    opacity: 0;
+    transform: translateX(-4px);
+    transition:
+      opacity var(--ys-dur-base) var(--ys-ease-out),
+      transform var(--ys-dur-base) var(--ys-ease-out),
+      color var(--ys-dur-base) var(--ys-ease-out);
+  }
+
+  .post-card:hover .post-card__arrow {
+    color: var(--ys-lavender);
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  @media (max-width: 640px) {
+    .post-card {
+      grid-template-columns: 2.25rem minmax(0, 1fr);
+      gap: var(--ys-space-sm);
+      padding: var(--ys-space-md);
+    }
+
+    .post-card__arrow {
+      display: none;
+    }
+  }
+</style>

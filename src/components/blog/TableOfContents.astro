@@ -1,0 +1,160 @@
+---
+/**
+ * 文章目录。
+ *
+ * 只接收已筛选过的 h2/h3。滚动时用 IntersectionObserver 高亮当前章节，
+ * 不引入任何前端框架。
+ */
+import type { MarkdownHeading } from 'astro';
+
+export interface Props {
+  headings: MarkdownHeading[];
+}
+
+const { headings } = Astro.props satisfies Props;
+---
+
+{headings.length > 0 && (
+  <nav class="toc" aria-label="文章目录" data-toc>
+    <p class="toc__title">
+      <span>ON THIS PAGE</span>
+      <span class="toc__title-zh">目录</span>
+    </p>
+    <ol class="toc__list">
+      {headings.map((h) => (
+        <li class:list={['toc__item', `toc__item--h${h.depth}`]}>
+          <a href={`#${h.slug}`} data-toc-link={h.slug}>
+            {h.text}
+          </a>
+        </li>
+      ))}
+    </ol>
+  </nav>
+)}
+
+<script>
+  function initTocInstance(toc: HTMLElement) {
+    const links = Array.from(toc.querySelectorAll<HTMLAnchorElement>('[data-toc-link]'));
+    if (links.length === 0) return;
+
+    const linkById = new Map(links.map((link) => [link.dataset.tocLink ?? '', link]));
+    const sections = Array.from(linkById.keys())
+      .map((id) => ({ id, element: document.getElementById(id) }))
+      .filter(
+        (section): section is { id: string; element: HTMLElement } => section.element !== null,
+      );
+
+    if (sections.length === 0) return;
+
+    let activeId = '';
+    let ticking = false;
+
+    const setActive = (id: string) => {
+      if (id === activeId) return;
+      activeId = id;
+
+      for (const [key, link] of linkById) {
+        const active = key === id;
+        link.classList.toggle('is-active', active);
+        if (active) link.setAttribute('aria-current', 'location');
+        else link.removeAttribute('aria-current');
+      }
+    };
+
+    /*
+      按“最后一个越过阅读线”的标题高亮，而不是用 IntersectionObserver 的
+      窄观察带：快速跳转或锚点直达时，标题可能正好落在观察带之外，
+      那样会没有任何高亮。滚动位置比较是确定的。
+    */
+    const update = () => {
+      ticking = false;
+      let current = '';
+
+      for (const { id, element } of sections) {
+        if (element.getBoundingClientRect().top <= 180) current = id;
+      }
+
+      setActive(current);
+    };
+
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(update);
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+
+    for (const link of links) {
+      link.addEventListener('click', () => {
+        if (link.dataset.tocLink) setActive(link.dataset.tocLink);
+      });
+    }
+
+    update();
+  }
+
+  // 桌面侧栏与移动端折叠目录是两个实例，必须全部初始化。
+  // 页面顶部只取第一个会让桌面目录失去高亮。
+  function initToc() {
+    document.querySelectorAll<HTMLElement>('[data-toc]').forEach((toc) => initTocInstance(toc));
+  }
+
+  initToc();
+</script>
+
+<style>
+  .toc__title {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--ys-space-2xs);
+    margin-block-end: var(--ys-space-sm);
+    padding-block-end: var(--ys-space-2xs);
+    border-block-end: 1px solid var(--ys-border-subtle);
+    font-size: var(--ys-fs-3xs);
+    font-weight: var(--ys-weight-medium);
+    letter-spacing: var(--ys-ls-wider);
+    color: var(--ys-text-faint);
+  }
+
+  .toc__title-zh {
+    letter-spacing: var(--ys-ls-wide);
+  }
+
+  .toc__list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    border-inline-start: 1px solid var(--ys-border-subtle);
+  }
+
+  .toc__item a {
+    display: block;
+    padding: 0.34rem 0.85rem;
+    margin-inline-start: -1px;
+    border-inline-start: 1px solid transparent;
+    font-size: var(--ys-fs-xs);
+    line-height: 1.55;
+    color: var(--ys-text-muted);
+    transition:
+      color var(--ys-dur-fast) var(--ys-ease-out),
+      border-color var(--ys-dur-fast) var(--ys-ease-out);
+  }
+
+  .toc__item a:hover,
+  .toc__item a:focus-visible {
+    color: var(--ys-text-secondary);
+  }
+
+  .toc__item a.is-active {
+    color: var(--ys-lavender);
+    border-inline-start-color: var(--ys-lavender);
+  }
+
+  .toc__item--h3 a {
+    padding-inline-start: 1.55rem;
+    font-size: var(--ys-fs-2xs);
+  }
+</style>

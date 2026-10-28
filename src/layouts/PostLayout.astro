@@ -1,32 +1,34 @@
 ---
+/**
+ * 文章布局：标题信息 + 正文 + 目录侧栏 + 上一篇/下一篇 + 相关阅读。
+ *
+ * 正文与目录是同级节点，目录不会被注入 .prose 内部，
+ * 中文长文的阅读节奏不受侧栏影响。
+ */
 import type { MarkdownHeading } from 'astro';
-import type { Post } from '../lib/posts';
-import { estimateReadingMinutes, formatDateLong, toISO } from '../lib/format';
-import { postCover } from '../lib/posts';
-import BaseLayout from './BaseLayout.astro';
-import TableOfContents from '../components/TableOfContents.astro';
-import TagPill from '../components/TagPill.astro';
-import CodeCopyButton from '../components/CodeCopyButton.astro';
-import RelatedPosts from '../components/RelatedPosts.astro';
-import BackToTop from '../components/BackToTop.astro';
+import type { Post } from '@/lib/posts';
+import { estimateReadingMinutes, formatDateLong, toISO } from '@/lib/format';
+import { postCover } from '@/lib/posts';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import TableOfContents from '@/components/blog/TableOfContents.astro';
+import TagPill from '@/components/blog/TagPill.astro';
+import CodeCopyButton from '@/components/blog/CodeCopyButton.astro';
+import RelatedPosts from '@/components/blog/RelatedPosts.astro';
+import BackToTop from '@/components/blog/BackToTop.astro';
 
 export interface Props {
   post: Post;
   headings: MarkdownHeading[];
-  /** 正文原文，用于估算阅读时长。由页面层从 collection entry 取后传入。 */
   body?: string;
   prevPost?: Post;
   nextPost?: Post;
-  /** 相关推荐，由页面层算好传入 */
   related?: Post[];
 }
 
-const { post, headings, body = '', prevPost, nextPost, related = [] } =
-  Astro.props satisfies Props;
+const { post, headings, body = '', prevPost, nextPost, related = [] } = Astro.props satisfies Props;
 const { title, description, date, tags, pinned } = post.data;
 
 const readingMinutes = estimateReadingMinutes(body);
-// 只有 h2/h3 进目录。与 TableOfContents 的过滤规则保持一致。
 const tocItems = headings.filter((h) => h.depth === 2 || h.depth === 3);
 const hasToc = tocItems.length > 0;
 ---
@@ -41,33 +43,51 @@ const hasToc = tocItems.length > 0;
   tags={tags}
   jsonLdType="BlogPosting"
 >
-  <div class="container post-page">
-    <a href="/" class="post-page__back">← 返回文章列表</a>
+  <div class="post-page ys-container">
+    <a href="/" class="post-page__back">
+      <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+        <path
+          d="M19 12H5M11 6l-6 6 6 6"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        ></path>
+      </svg>
+      <span>返回文章列表</span>
+    </a>
 
-    <header class="post-header">
-      <h1 class="post-header__title">{title}</h1>
-      <div class="post-header__meta">
+    <header class="post-head">
+      <p class="ys-eyebrow post-head__eyebrow">ARTICLE</p>
+
+      <h1 class="post-head__title">{title}</h1>
+
+      {description && <p class="post-head__desc">{description}</p>}
+
+      <div class="post-head__meta">
         <time datetime={toISO(date)}>{formatDateLong(date)}</time>
         <span aria-hidden="true">·</span>
         <span>约 {readingMinutes} 分钟阅读</span>
-        {pinned && <span class="post-header__badge">置顶</span>}
+        {pinned && <span class="post-head__badge">置顶</span>}
       </div>
-      {
-        tags.length > 0 && (
-          <div class="post-header__tags">
-            {tags.map((tag) => (
-              <TagPill tag={tag} />
-            ))}
-          </div>
-        )
-      }
+
+      {tags.length > 0 && (
+        <div class="post-head__tags">
+          {tags.map((tag) => (
+            <TagPill tag={tag} />
+          ))}
+        </div>
+      )}
     </header>
 
-    <!--
-      grid 布局：正文与 TOC 是兄弟节点，TOC 不会被注入正文内部。
-      这样中文长文的行高和阅读节奏不受任何影响。
-      无目录时不渲染侧栏，正文占满宽度。
-    -->
+    {hasToc && (
+      <details class="post-toc-mobile">
+        <summary>目录</summary>
+        <TableOfContents headings={tocItems} />
+      </details>
+    )}
+
     <div class:list={['post-grid', { 'post-grid--no-toc': !hasToc }]}>
       <div class="post-grid__main">
         <div class="prose">
@@ -75,35 +95,35 @@ const hasToc = tocItems.length > 0;
         </div>
         <CodeCopyButton />
 
-        {
-          (prevPost || nextPost) && (
-            <nav class="post-nav" aria-label="文章导航">
-              {prevPost ? (
-                <a href={`/blog/${prevPost.id}/`} class="post-nav__item post-nav__item--prev">
-                  <span class="post-nav__label">← 上一篇</span>
-                  <span class="post-nav__title">{prevPost.data.title}</span>
-                </a>
-              ) : (
-                <span />
-              )}
-              {nextPost && (
-                <a href={`/blog/${nextPost.id}/`} class="post-nav__item post-nav__item--next">
-                  <span class="post-nav__label">下一篇 →</span>
-                  <span class="post-nav__title">{nextPost.data.title}</span>
-                </a>
-              )}
-            </nav>
-          )
-        }
+        {(prevPost || nextPost) && (
+          <nav class="post-nav" aria-label="文章导航">
+            {prevPost ? (
+              <a href={`/blog/${prevPost.id}/`} class="post-nav__item post-nav__item--prev">
+                <span class="post-nav__label">← 上一篇</span>
+                <span class="post-nav__title">{prevPost.data.title}</span>
+              </a>
+            ) : (
+              <span />
+            )}
+            {nextPost && (
+              <a href={`/blog/${nextPost.id}/`} class="post-nav__item post-nav__item--next">
+                <span class="post-nav__label">下一篇 →</span>
+                <span class="post-nav__title">{nextPost.data.title}</span>
+              </a>
+            )}
+          </nav>
+        )}
 
         <RelatedPosts currentTags={tags} posts={related} />
       </div>
 
-      <aside class="post-grid__side">
-        <div class="post-grid__sticky">
-          <TableOfContents headings={tocItems} />
-        </div>
-      </aside>
+      {hasToc && (
+        <aside class="post-grid__aside">
+          <div class="post-grid__sticky">
+            <TableOfContents headings={tocItems} />
+          </div>
+        </aside>
+      )}
     </div>
   </div>
 
@@ -112,133 +132,203 @@ const hasToc = tocItems.length > 0;
 
 <style>
   .post-page {
-    max-width: 68rem;
+    max-inline-size: var(--ys-page-width);
+    padding-block: calc(var(--ys-nav-height) + var(--ys-space-xl)) var(--ys-space-3xl);
   }
 
   .post-page__back {
-    display: inline-block;
-    margin-bottom: var(--space-5);
-    font-size: 0.875rem;
-    color: var(--text-muted);
-  }
-
-  .post-page__back:hover {
-    color: var(--accent);
-  }
-
-  .post-header {
-    margin-bottom: var(--space-6);
-  }
-
-  .post-header__title {
-    font-size: 2rem;
-    line-height: 1.3;
-    margin: 0 0 0.75rem;
-  }
-
-  .post-header__meta {
-    display: flex;
+    display: inline-flex;
     align-items: center;
+    gap: var(--ys-space-2xs);
+    margin-block-end: var(--ys-space-xl);
+    font-size: var(--ys-fs-2xs);
+    letter-spacing: var(--ys-ls-wide);
+    color: var(--ys-text-muted);
+    transition: color var(--ys-dur-fast) var(--ys-ease-out);
+  }
+
+  .post-page__back:hover,
+  .post-page__back:focus-visible {
+    color: var(--ys-lavender);
+  }
+
+  .post-head {
+    display: grid;
+    gap: var(--ys-space-sm);
+    max-inline-size: var(--ys-reading-width);
+    margin-block-end: var(--ys-space-xl);
+  }
+
+  .post-head__title {
+    font-size: clamp(1.9rem, 1.45rem + 1.7vw, 3rem);
+    font-weight: var(--ys-weight-light);
+    line-height: 1.22;
+    letter-spacing: var(--ys-ls-snug);
+    color: var(--ys-text);
+  }
+
+  .post-head__desc {
+    max-inline-size: 40rem;
+    color: var(--ys-text-secondary);
+    font-size: var(--ys-fs-md);
+    line-height: var(--ys-lh-relaxed);
+  }
+
+  .post-head__meta {
+    display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
-    font-size: 0.875rem;
-    color: var(--text-muted);
+    align-items: center;
+    gap: var(--ys-space-2xs);
+    font-size: var(--ys-fs-xs);
+    font-variant-numeric: tabular-nums;
+    color: var(--ys-text-muted);
   }
 
-  .post-header__badge {
-    padding: 0.1em 0.55em;
-    font-size: 0.75rem;
-    border-radius: 999px;
-    color: var(--accent);
-    background: color-mix(in srgb, var(--accent) 14%, transparent);
-    border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  .post-head__badge {
+    margin-inline-start: var(--ys-space-2xs);
+    padding: 0.1em 0.6em;
+    font-size: var(--ys-fs-3xs);
+    letter-spacing: var(--ys-ls-wide);
+    color: var(--ys-lavender);
+    background-color: color-mix(in srgb, var(--ys-purple) 18%, transparent);
+    border: 1px solid var(--ys-border-strong);
+    border-radius: var(--ys-radius-pill);
   }
 
-  .post-header__tags {
+  .post-head__tags {
     display: flex;
     flex-wrap: wrap;
     gap: 0.4rem;
-    margin-top: var(--space-4);
+    margin-block-start: var(--ys-space-2xs);
+  }
+
+  .post-toc-mobile {
+    display: none;
+    margin-block-end: var(--ys-space-md);
+    padding: var(--ys-space-sm) var(--ys-space-md);
+    background-color: color-mix(in srgb, var(--ys-night) 78%, transparent);
+    border: 1px solid var(--ys-border);
+    border-radius: var(--ys-radius-lg);
+  }
+
+  .post-toc-mobile summary {
+    font-size: var(--ys-fs-xs);
+    letter-spacing: var(--ys-ls-wide);
+    color: var(--ys-text-secondary);
+    cursor: pointer;
+  }
+
+  .post-toc-mobile[open] summary {
+    margin-block-end: var(--ys-space-sm);
+    padding-block-end: var(--ys-space-2xs);
+    border-block-end: 1px solid var(--ys-border-subtle);
   }
 
   .post-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-6);
+    grid-template-columns: minmax(0, 1fr) 15rem;
+    gap: var(--ys-space-2xl);
     align-items: start;
   }
 
-  @media (min-width: 64rem) {
-    .post-grid {
-      grid-template-columns: minmax(0, 1fr) 15rem;
-    }
+  .post-grid--no-toc {
+    grid-template-columns: minmax(0, 1fr);
+  }
 
-    /* 没有目录时正文占满宽度，不留空列 */
-    .post-grid--no-toc {
-      grid-template-columns: minmax(0, 1fr);
-    }
+  .post-grid__main {
+    min-width: 0;
+    max-inline-size: var(--ys-reading-width);
+  }
 
-    .post-grid--no-toc .post-grid__side {
-      display: none;
-    }
+  /* 侧栏必须撑满整行，sticky 才有可移动的空间 */
+  .post-grid__aside {
+    align-self: stretch;
+  }
+
+  .post-grid--no-toc .post-grid__main {
+    margin-inline: auto;
   }
 
   .post-grid__sticky {
     position: sticky;
-    top: 5.5rem;
-    max-height: calc(100vh - 7rem);
+    top: calc(var(--ys-nav-height) + var(--ys-space-md));
+    max-height: calc(100svh - var(--ys-nav-height) - var(--ys-space-xl));
     overflow-y: auto;
-    padding: var(--space-4);
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
+    padding: var(--ys-space-md);
+    background-color: color-mix(in srgb, var(--ys-night) 78%, transparent);
+    border: 1px solid var(--ys-border);
+    border-radius: var(--ys-radius-lg);
   }
 
   .post-nav {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: var(--space-4);
-    margin-top: var(--space-6);
+    gap: var(--ys-space-sm);
+    margin-block-start: var(--ys-space-2xl);
   }
 
   .post-nav__item {
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
-    padding: var(--space-4);
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    transition: border-color var(--transition), transform var(--transition);
+    gap: 0.35rem;
+    padding: var(--ys-space-md);
+    background-color: color-mix(in srgb, var(--ys-night) 76%, transparent);
+    border: 1px solid var(--ys-border);
+    border-radius: var(--ys-radius-lg);
+    transition:
+      border-color var(--ys-dur-base) var(--ys-ease-out),
+      background-color var(--ys-dur-base) var(--ys-ease-out),
+      transform var(--ys-dur-base) var(--ys-ease-out);
   }
 
-  .post-nav__item:hover {
-    border-color: var(--accent);
+  .post-nav__item:hover,
+  .post-nav__item:focus-visible {
+    border-color: var(--ys-border-strong);
+    background-color: color-mix(in srgb, var(--ys-deep) 82%, transparent);
     transform: translateY(-2px);
   }
 
   .post-nav__item--next {
-    text-align: right;
+    text-align: end;
   }
 
   .post-nav__label {
-    font-size: 0.8125rem;
-    color: var(--text-muted);
+    font-size: var(--ys-fs-2xs);
+    letter-spacing: var(--ys-ls-wide);
+    color: var(--ys-text-muted);
   }
 
   .post-nav__title {
-    font-size: 0.9375rem;
-    color: var(--text-strong);
-    line-height: 1.5;
+    font-size: var(--ys-fs-sm);
+    line-height: var(--ys-lh-snug);
+    color: var(--ys-text-secondary);
+  }
+
+  @media (max-width: 63.99rem) {
+    .post-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .post-grid__aside {
+      display: none;
+    }
+
+    .post-toc-mobile {
+      display: block;
+    }
   }
 
   @media (max-width: 40rem) {
+    .post-page {
+      padding-block-start: calc(var(--ys-nav-height) + var(--ys-space-lg));
+    }
+
     .post-nav {
       grid-template-columns: 1fr;
     }
 
     .post-nav__item--next {
-      text-align: left;
+      text-align: start;
     }
   }
 </style>

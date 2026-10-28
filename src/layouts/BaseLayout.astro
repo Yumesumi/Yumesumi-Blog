@@ -1,59 +1,61 @@
 ---
-import '../styles/global.css';
-import '../styles/theme.css';
-import '../styles/prose.css';
-import '../styles/shiki.css';
+/**
+ * 基础布局：文档骨架、SEO、字体、固定环境层、导航与页脚。
+ *
+ * 站点只有深色一套视觉，不再有主题切换与首帧防闪烁脚本。
+ */
+import '@/styles/global.css';
+import '@/styles/prose.css';
+import '@/styles/shiki.css';
 
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
-import { absoluteUrl, defaultOgImage, SITE_NAME, SITE_DESCRIPTION } from '../lib/site';
+import SiteNav from '@/components/ui/SiteNav.astro';
+import SiteFooter from '@/components/ui/SiteFooter.astro';
+import HomeAmbience from '@/components/ui/HomeAmbience.astro';
+import {
+  absoluteUrl,
+  DEFAULT_OG_IMAGE,
+  SITE_AUTHOR,
+  SITE_DESCRIPTION,
+  SITE_NAME,
+  SITE_ORIGIN,
+} from '@/lib/site';
 
 export interface Props {
   title: string;
   description?: string;
-  /** OG 类型，文章页传 article */
   ogType?: 'website' | 'article';
-  /** 文章发布时间，用于 OG 与 JSON-LD */
   publishedTime?: Date;
-  /** 文章更新时间，用于 OG 与 JSON-LD */
   modifiedTime?: Date;
-  /** 分享图路径（站点内绝对路径）。不传则用站点默认图 */
+  /** 分享图路径（站内绝对路径）。不传则用站点默认图 */
   ogImage?: string;
-  /** 标签，JSON-LD 里作为 keywords */
   tags?: string[];
-  /** 传给 JSON-LD 的文章类型，文章页传 BlogPosting */
   jsonLdType?: 'Blog' | 'BlogPosting';
+  /** 404 等不需要收录的页面 */
+  noindex?: boolean;
 }
 
 const {
   title,
-  description,
+  description = SITE_DESCRIPTION,
   ogType = 'website',
   publishedTime,
   modifiedTime,
-  ogImage,
+  ogImage = DEFAULT_OG_IMAGE,
   tags = [],
   jsonLdType = 'Blog',
+  noindex = false,
 } = Astro.props satisfies Props;
 
-const siteDescription = description ?? SITE_DESCRIPTION;
-// 首页标题就是站点名，不重复拼接
-const fullTitle = title === SITE_NAME ? title : `${title} | ${SITE_NAME}`;
+const pageTitle = title === SITE_NAME ? title : `${title} · ${SITE_NAME}`;
+const canonical = new URL(Astro.url.pathname, Astro.site ?? SITE_ORIGIN);
+const ogImageUrl = absoluteUrl(ogImage);
+const base = import.meta.env.BASE_URL;
 
-// 用 Astro.site 拼绝对 URL。OG 标签必须是绝对地址，相对路径无效。
-const canonicalURL = Astro.site ? new URL(Astro.url.pathname, Astro.site) : Astro.url;
-const ogImageURL = ogImage
-  ? absoluteUrl(ogImage)
-  : absoluteUrl(defaultOgImage);
-
-// ---------- JSON-LD 结构化数据 ----------
-// 让搜索引擎正确识别页面类型。文章页用 BlogPosting（含发布时间），
-// 其余页面用 Blog。`@graph` 把 WebSite 和文章串起来，
-// 让 Google 知道站点名、作者、文章归属。
+// ---------- JSON-LD ----------
 const websiteNode = {
   '@type': 'WebSite',
-  '@id': `${absoluteUrl('/')}#website`,
-  url: absoluteUrl('/'),
+  '@id': `${SITE_ORIGIN}/#website`,
+  url: `${SITE_ORIGIN}/`,
   name: SITE_NAME,
   description: SITE_DESCRIPTION,
   inLanguage: 'zh-CN',
@@ -65,20 +67,20 @@ const jsonLd = {
     websiteNode,
     {
       '@type': jsonLdType,
-      '@id': `${canonicalURL.href}#${jsonLdType.toLowerCase()}`,
-      url: canonicalURL.href,
+      '@id': `${canonical.href}#${jsonLdType.toLowerCase()}`,
+      url: canonical.href,
       headline: title,
-      name: fullTitle,
-      description: siteDescription,
+      name: pageTitle,
+      description,
       inLanguage: 'zh-CN',
       isPartOf: { '@id': websiteNode['@id'] },
       ...(jsonLdType === 'BlogPosting'
         ? {
             datePublished: publishedTime?.toISOString(),
             dateModified: (modifiedTime ?? publishedTime)?.toISOString(),
-            author: { '@type': 'Person', name: SITE_NAME },
+            author: { '@type': 'Person', name: SITE_AUTHOR },
             keywords: tags.length > 0 ? tags.join(', ') : undefined,
-            image: ogImageURL,
+            image: ogImageUrl,
           }
         : {}),
     },
@@ -90,80 +92,68 @@ const jsonLd = {
 <html lang="zh-CN">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
-    <!--
-      主题初始化脚本：必须放在 <head> 最前面，且同步执行。
-      is:inline 阻止 Astro 把它打包成 type="module"（那样会变成异步，页面会先闪一下浅色）。
-      try/catch 兜住 Safari 无痕模式下 localStorage 抛异常的情况。
-      读和写都做：即使 JS 完全失效（比如被扩展禁用），
-      theme.css 里的 @media (prefers-color-scheme: dark) 兜底仍然生效。
-    -->
-    <script is:inline>
-      (function () {
-        try {
-          var saved = localStorage.getItem('theme');
-          if (saved === 'light' || saved === 'dark') {
-            document.documentElement.setAttribute('data-theme', saved);
-          } else {
-            var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            var theme = prefersDark ? 'dark' : 'light';
-            document.documentElement.setAttribute('data-theme', theme);
-            // 首次判断结果写入，避免每次刷新都重新判断
-            localStorage.setItem('theme', theme);
-          }
-        } catch (e) {
-          document.documentElement.setAttribute('data-theme', 'dark');
-        }
-      })();
-    </script>
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex" />}
+    <link rel="canonical" href={canonical.href} />
 
-    <title>{fullTitle}</title>
-    <meta name="description" content={siteDescription} />
-    <link rel="canonical" href={canonicalURL} />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="sitemap" href="/sitemap-index.xml" />
-
-    <!-- 明确声明本站只提供 HTTPS，浏览器遇到 http 时会直接升级 -->
+    <meta name="theme-color" content="#05050c" />
+    <meta name="color-scheme" content="dark" />
     <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests" />
+
+    <link rel="icon" href={`${base}favicon.svg`} type="image/svg+xml" />
+    <link rel="apple-touch-icon" href={`${base}favicon.svg`} />
+    <link rel="sitemap" href={`${base}sitemap-index.xml`} />
+
+    <!-- 预加载拉丁字体分片，让首屏字标更早完成绘制 -->
+    <link
+      rel="preload"
+      href={`${base}fonts/misans-latin.woff2`}
+      as="font"
+      type="font/woff2"
+      crossorigin="anonymous"
+    />
+    <link rel="stylesheet" href={`${base}fonts/fonts.css`} />
 
     <!-- Open Graph -->
     <meta property="og:type" content={ogType} />
     <meta property="og:site_name" content={SITE_NAME} />
-    <meta property="og:title" content={fullTitle} />
-    <meta property="og:description" content={siteDescription} />
-    <meta property="og:url" content={canonicalURL} />
-    <meta property="og:image" content={ogImageURL} />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical.href} />
+    <meta property="og:image" content={ogImageUrl} />
     <meta property="og:locale" content="zh_CN" />
-    {publishedTime && <meta property="article:published_time" content={publishedTime.toISOString()} />}
-    {tags.map((tag) => <meta property="article:tag" content={tag} />)}
+    {publishedTime && (
+      <meta property="article:published_time" content={publishedTime.toISOString()} />
+    )}
+    {tags.map((tag) => (
+      <meta property="article:tag" content={tag} />
+    ))}
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content={fullTitle} />
-    <meta name="twitter:description" content={siteDescription} />
-    <meta name="twitter:image" content={ogImageURL} />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageUrl} />
 
-    <!-- 结构化数据 -->
     <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
-
     <meta name="generator" content={Astro.generator} />
   </head>
 
   <body>
-    <!-- 页面底层星云光晕，固定不随滚动 -->
-    <div class="nebula" aria-hidden="true">
-      <div class="nebula__stars"></div>
-    </div>
+    <a class="ys-skip-link" href="#main-content">
+      跳转到主要内容
+    </a>
 
-    <Header />
+    <HomeAmbience />
+    <SiteNav />
 
     <main id="main-content">
       <slot />
     </main>
 
-    <Footer />
+    <SiteFooter />
   </body>
 </html>

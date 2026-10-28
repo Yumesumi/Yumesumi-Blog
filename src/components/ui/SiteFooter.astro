@@ -1,0 +1,205 @@
+---
+/**
+ * 页脚：品牌、导航、相关站点与联系信息。
+ */
+import { PRIMARY_NAV } from '@/data/navigation';
+import {
+  CENTER_NAME,
+  CENTER_URL,
+  SITE_EMAIL,
+  SITE_GITHUB,
+  SITE_NAME,
+  SITE_TAGLINE,
+  SITE_WORDMARK,
+} from '@/lib/site';
+import BrandLogo from '@/components/ui/BrandLogo.astro';
+
+const base = import.meta.env.BASE_URL;
+const withBase = (href: string) => `${base}${href.replace(/^\//, '')}`;
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="ys-container ys-container--wide">
+    <div class="site-footer__top">
+      <div class="site-footer__brand">
+        <BrandLogo size={44} label="" class="site-footer__mark" />
+        <div>
+          <p class="site-footer__name">{SITE_WORDMARK}</p>
+          <p class="site-footer__zh">{SITE_NAME}</p>
+        </div>
+      </div>
+
+      <p class="site-footer__tagline">{SITE_TAGLINE}</p>
+    </div>
+
+    <div class="site-footer__grid">
+      <nav class="site-footer__col" aria-label="页脚导航">
+        <h2 class="site-footer__title">页面</h2>
+        <ul>
+          {PRIMARY_NAV.map((item) => (
+            <li>
+              <a href={withBase(item.href)}>{item.labelZh}</a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      <nav class="site-footer__col" aria-label="相关站点">
+        <h2 class="site-footer__title">相关</h2>
+        <ul>
+          <li>
+            <a href={CENTER_URL} target="_blank" rel="noopener noreferrer">
+              {CENTER_NAME}
+            </a>
+          </li>
+          <li>
+            <a href={SITE_GITHUB} target="_blank" rel="noopener noreferrer">
+              GitHub
+            </a>
+          </li>
+          <li>
+            <a href={`mailto:${SITE_EMAIL}`}>{SITE_EMAIL}</a>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="site-footer__col">
+        <h2 class="site-footer__title">构建</h2>
+        <ul>
+          <li>
+            <a href="https://astro.build/" target="_blank" rel="noopener noreferrer">
+              Astro
+            </a>
+          </li>
+          <li>
+            <a href="https://pages.github.com/" target="_blank" rel="noopener noreferrer">
+              GitHub Pages
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="site-footer__bottom">
+      <p>
+        © {year} {SITE_NAME}. 保留所有权利。
+      </p>
+      <p class="site-footer__note">
+        <a href={CENTER_URL} target="_blank" rel="noopener noreferrer">
+          {CENTER_NAME}
+        </a>
+        的一部分 · 由 Astro 构建
+      </p>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    position: relative;
+    z-index: var(--ys-z-content);
+    padding-block: var(--ys-space-2xl) var(--ys-space-lg);
+    border-block-start: 1px solid var(--ys-border-subtle);
+    background-color: var(--ys-void);
+  }
+
+  .site-footer__top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ys-space-md);
+    padding-block-end: var(--ys-space-lg);
+    border-block-end: 1px solid var(--ys-border-subtle);
+  }
+
+  .site-footer__brand {
+    display: flex;
+    align-items: center;
+    gap: var(--ys-space-sm);
+  }
+
+  .site-footer__mark {
+    inline-size: 38px;
+    block-size: 38px;
+    opacity: 0.9;
+  }
+
+  .site-footer__name {
+    font-size: var(--ys-fs-2xs);
+    font-weight: var(--ys-weight-medium);
+    letter-spacing: var(--ys-ls-wider);
+  }
+
+  .site-footer__zh {
+    font-size: var(--ys-fs-xs);
+    color: var(--ys-text-muted);
+  }
+
+  .site-footer__tagline {
+    max-inline-size: 24rem;
+    font-size: var(--ys-fs-xs);
+    line-height: var(--ys-lh-relaxed);
+    color: var(--ys-text-muted);
+  }
+
+  .site-footer__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: var(--ys-space-lg);
+    padding-block: var(--ys-space-lg);
+  }
+
+  .site-footer__title {
+    margin-block-end: var(--ys-space-sm);
+    font-size: var(--ys-fs-2xs);
+    font-weight: var(--ys-weight-medium);
+    letter-spacing: var(--ys-ls-wider);
+    text-transform: uppercase;
+    color: var(--ys-text-faint);
+  }
+
+  .site-footer__col ul {
+    display: grid;
+    gap: var(--ys-space-2xs);
+  }
+
+  .site-footer__col a {
+    font-size: var(--ys-fs-sm);
+    color: var(--ys-text-secondary);
+    overflow-wrap: anywhere;
+    transition: color var(--ys-dur-fast) var(--ys-ease-out);
+  }
+
+  .site-footer__col a:hover,
+  .site-footer__col a:focus-visible {
+    color: var(--ys-text);
+  }
+
+  @media (max-width: 480px) {
+    .site-footer__grid {
+      grid-template-columns: 1fr;
+      gap: var(--ys-space-md);
+    }
+  }
+
+  .site-footer__bottom {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ys-space-2xs) var(--ys-space-md);
+    justify-content: space-between;
+    padding-block-start: var(--ys-space-md);
+    border-block-start: 1px solid var(--ys-border-subtle);
+    font-size: var(--ys-fs-xs);
+    color: var(--ys-text-faint);
+  }
+
+  .site-footer__note a {
+    color: var(--ys-text-muted);
+  }
+
+  .site-footer__note a:hover {
+    color: var(--ys-text-secondary);
+  }
+</style>

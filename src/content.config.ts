@@ -36,7 +36,7 @@ const blog = defineCollection({
     date: z.coerce.date(),
     description: z.string().optional(),
     tags: z.array(z.string()).default([]),
-    // 草稿：首页列表不显示
+    // 草稿：不生成页面、不进列表与搜索索引
     draft: z.boolean().default(false),
     // 置顶：列表中排在最前
     pinned: z.boolean().default(false),

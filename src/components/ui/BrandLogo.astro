@@ -1,0 +1,78 @@
+---
+/**
+ * 品牌 Logo 组件。
+ *
+ * 统一全站的品牌标记呈现方式，避免各处自行拼凑几何图形——
+ * 那些「自造的菱形」看似呼应品牌，实则缺少四芒星与装饰弧线，
+ * 观感上只是空心几何体，失去了品牌辨识度。
+ *
+ * 设计要点：
+ *   · 使用从 logo矢量图.ai 精确提取的真实路径（public/brand/logo.svg）
+ *   · SVG 直接内联到 HTML，而不是 <img> + CSS 滤镜：
+ *     首页水印放大到 92vmin 时也保持真正的矢量边缘，不会被滤镜栅格化
+ *   · 尺寸支持 maxSize 上限，避免在小屏上溢出
+ *   · 通过 opacity 控制层次；纯装饰时 label 传空字符串
+ */
+import logoRaw from '../../../public/brand/logo.svg?raw';
+
+interface Props {
+  /** 尺寸（px 数值，或任意 CSS 长度如 'var(--token)'） */
+  size?: number | string;
+  /** 尺寸上限（CSS 长度，如 '78vw'）；不传则不限制 */
+  maxSize?: string;
+  /** 无障碍标签；纯装饰时传空字符串 */
+  label?: string;
+  /** 额外 class */
+  class?: string;
+  /** 不透明度 */
+  opacity?: number;
+}
+
+const { size = 32, maxSize, label = '梦澄博客', class: className = '', opacity = 1 } = Astro.props;
+
+/** 数值按 px 处理，字符串视为完整 CSS 长度 */
+const cssSize = typeof size === 'number' ? `${size}px` : size;
+
+/** 有上限时用 min() 表达，保证小屏不溢出 */
+const sizing = maxSize
+  ? `inline-size:min(${cssSize},${maxSize});block-size:min(${cssSize},${maxSize})`
+  : `inline-size:${cssSize};block-size:${cssSize}`;
+
+/*
+  直接以原始文本引入 public 中的同一个源文件，避免出现两份 Logo 副本。
+  去掉 SVG 自带的 role / aria-label，改由外层 span 承担无障碍语义。
+*/
+const logoMarkup = logoRaw
+  .replace(/\srole="img"/, '')
+  .replace(/\saria-label="[^"]*"/, '')
+  .replace('<svg ', '<svg class="ys-logo__svg" aria-hidden="true" focusable="false" ');
+---
+
+<span
+  class:list={['ys-logo', className]}
+  style={`${sizing};opacity:${opacity}`}
+  role={label ? 'img' : undefined}
+  aria-label={label || undefined}
+  aria-hidden={label ? undefined : 'true'}
+  set:html={logoMarkup}
+/>
+
+<style>
+  .ys-logo {
+    display: block;
+    flex-shrink: 0;
+    transition:
+      opacity var(--ys-dur-base) var(--ys-ease-out),
+      transform var(--ys-dur-base) var(--ys-ease-out);
+  }
+
+  /*
+    SVG 由 set:html 注入，不带 Astro 的作用域属性，
+    因此这里必须用 :global 才能命中内联的 svg 根节点。
+  */
+  .ys-logo :global(.ys-logo__svg) {
+    display: block;
+    inline-size: 100%;
+    block-size: 100%;
+  }
+</style>

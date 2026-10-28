@@ -1,44 +1,21 @@
 /**
  * 搜索交互逻辑（顶栏搜索框与搜索页共用）。
  *
- * 抽成独立模块的原因：顶栏和搜索页都需要搜索框，
- * 若各写一份，评分权重、匹配规则、高亮逻辑会随时间不一致。
+ * 搜索索引由构建期生成在 `/search-index.json`。站点部署在自定义域名根路径，
+ * 可以直接用 BASE_URL 拼出地址，不再需要为 github.io 子路径做运行时换算。
  */
+import type { SearchEntry } from './search-types';
 
-export interface SearchEntry {
-  url: string;
-  title: string;
-  description: string;
-  tags: string[];
-  tagUrls: string[];
-  date: string;
-  body: string;
-}
+export type { SearchEntry };
 
 /** 评分权重：标题 > 标签 > 摘要 > 正文 */
 const W = { title: 10, tags: 5, desc: 3, body: 1 } as const;
 
-/**
- * 定位搜索索引文件。
- *
- * 不能写绝对路径 '/search-index.json' —— 站点同时支持根路径（域名生效后）
- * 与子路径（github.io 回退地址），绝对路径在子路径下会 404。
- * `relative-base` 插件只改写 HTML 属性，改不到 JS 里的字符串，
- * 所以这里从当前文档地址逐级上溯到站点根。
- */
-export function indexUrl(doc: Document = document): string {
-  // 从页面上的 <base> 或已知标记推断站点根；退回用相对路径上溯。
-  const marker = doc.querySelector<HTMLAnchorElement>('[data-site-root]');
-  if (marker) return new URL('search-index.json', new URL(marker.href, location.href)).href;
-
-  // 页面 URL 形如 <root>/search/ 或 <root>/blog/xxx/
-  const path = location.pathname;
-  const depth = path.split('/').filter(Boolean).length;
-  const up = Array.from({ length: depth }, () => '..');
-  return new URL([...up, 'search-index.json'].join('/'), location.href).href;
+/** 搜索索引地址。BASE_URL 始终以 `/` 结尾。 */
+export function indexUrl(): string {
+  return `${import.meta.env.BASE_URL}search-index.json`;
 }
 
-/** 取整条记录的可搜索文本（小写）。 */
 function haystacks(entry: SearchEntry) {
   return {
     title: entry.title.toLowerCase(),
@@ -53,11 +30,11 @@ export function scoreEntry(entry: SearchEntry, terms: string[], phrase: string):
   const hay = haystacks(entry);
   let total = 0;
 
-  for (const t of terms) {
-    if (hay.title.includes(t)) total += W.title;
-    if (hay.tags.includes(t)) total += W.tags;
-    if (hay.desc.includes(t)) total += W.desc;
-    if (hay.body.includes(t)) total += W.body;
+  for (const term of terms) {
+    if (hay.title.includes(term)) total += W.title;
+    if (hay.tags.includes(term)) total += W.tags;
+    if (hay.desc.includes(term)) total += W.desc;
+    if (hay.body.includes(term)) total += W.body;
   }
 
   // 完整短语命中说明用户意图明确，额外加权
@@ -71,26 +48,23 @@ export function runSearch(
   entries: SearchEntry[],
   query: string,
 ): { matched: SearchEntry[]; terms: string[] } {
-  const q = query.trim().toLowerCase();
-  if (!q) return { matched: [], terms: [] };
+  const normalized = query.trim().toLowerCase();
+  if (!normalized) return { matched: [], terms: [] };
 
-  const terms = q.split(/\s+/).filter(Boolean);
+  const terms = normalized.split(/\s+/).filter(Boolean);
 
   const matched = entries
-    .map((entry) => ({ entry, s: scoreEntry(entry, terms, q) }))
-    .filter((x) => x.s > 0)
-    .sort((a, b) => b.s - a.s)
-    .map((x) => x.entry);
+    .map((entry) => ({ entry, score: scoreEntry(entry, terms, normalized) }))
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .map((item) => item.entry);
 
   return { matched, terms };
 }
 
 /** 转义 HTML，防止索引内容里的特殊字符破坏结构。 */
 function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 /** 高亮关键词。先转义再插入 <mark>，避免 XSS。 */
@@ -98,23 +72,24 @@ export function highlight(text: string, terms: string[]): string {
   const escaped = escapeHtml(text);
   if (terms.length === 0) return escaped;
 
-  const pattern = terms
-    .map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-    .join('|');
+  const pattern = terms.map((term) => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
 
   return escaped.replace(new RegExp(`(${pattern})`, 'gi'), '<mark>$1</mark>');
 }
 
 /** 取正文里包含关键词的片段，让结果能看出为何命中。 */
-export function excerptAround(body: string, terms: string[], length = 120): string {
+export function excerptAround(body: string, terms: string[], length = 140): string {
   if (terms.length === 0) return body.slice(0, length);
 
   const lower = body.toLowerCase();
-  const idx = terms.map((t) => lower.indexOf(t)).filter((i) => i >= 0).sort((a, b) => a - b)[0];
+  const index = terms
+    .map((term) => lower.indexOf(term))
+    .filter((found) => found >= 0)
+    .sort((a, b) => a - b)[0];
 
-  if (idx === undefined) return body.slice(0, length);
+  if (index === undefined) return body.slice(0, length);
 
-  const start = Math.max(0, idx - 40);
+  const start = Math.max(0, index - 40);
   const prefix = start > 0 ? '…' : '';
   return prefix + body.slice(start, start + length);
 }
@@ -129,48 +104,22 @@ export function formatIndexDate(iso: string): string {
 }
 
 /**
- * 把索引里的站内绝对路径解析成当前站点下可用的 URL。
- *
- * 索引里的 `url` / `tagUrls` 是 `/blog/xxx/` 这种站点根绝对路径。
- * 但站点同时支持两个地址：
- *   - 根路径    https://yumesumi.cyou/blog/xxx/
- *   - 子路径    https://yumesumi.github.io/Yumesumi-Blog/blog/xxx/
- * 直接赋值给 `location.href` 或 `<a href>` 时，绝对路径会丢掉子路径前缀，
- * 在 github.io 回退地址下 404。
- *
- * `relative-base` 插件只改写 HTML 里已有的属性，改不到 JS 运行期
- * 动态创建的节点，所以这里在运行时按当前页面深度换算成相对路径。
- */
-export function toSiteUrl(path: string, doc: Document = document): string {
-  if (/^https?:\/\//.test(path)) return path;
-
-  // 文档里的 <a data-site-root> 指向站点根（BaseLayout 渲染时带上）
-  const marker = doc.querySelector<HTMLAnchorElement>('[data-site-root]');
-  if (marker) return new URL(path, new URL(marker.href, location.href)).href;
-
-  // 退化方案：按当前页面路径深度逐级上溯
-  const depth = location.pathname.split('/').filter(Boolean).length;
-  const up = Array.from({ length: depth }, () => '..');
-  return new URL([...up, path.replace(/^\//, '')].join('/'), location.href).href;
-}
-
-/** 索引加载器。
+ * 索引加载器。
  *
  * 多个组件（顶栏 + 搜索页）会同时用到，用模块级 Promise 缓存，
- * 避免重复请求同一个 JSON。
+ * 避免重复请求同一个 JSON。失败时清空缓存，下次调用可重试。
  */
 let indexPromise: Promise<SearchEntry[]> | null = null;
 
 export function loadIndex(): Promise<SearchEntry[]> {
   indexPromise ??= fetch(indexUrl())
-    .then((res) => {
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return res.json();
+    .then((response) => {
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.json() as Promise<SearchEntry[]>;
     })
-    .catch((err) => {
-      // 失败时清空缓存，下次调用可重试
+    .catch((error: unknown) => {
       indexPromise = null;
-      throw err;
+      throw error;
     });
 
   return indexPromise;

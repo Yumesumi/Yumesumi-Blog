@@ -1,24 +1,30 @@
 {
   "name": "yumesumi-blog",
   "type": "module",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
+  "description": "Yumesumi Blog · 梦澄博客 — 技术文章、个人思考与创作记录",
   "engines": {
-    "node": ">=22.12.0"
+    "node": ">=22.23.4"
   },
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
     "check": "astro check",
-    "verify": "astro check && astro build"
+    "verify": "astro check && astro build && node scripts/verify-site.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "deploy": "node tools/deploy-pages.mjs"
   },
   "dependencies": {
-    "astro": "^7.3.5"
+    "astro": "7.4.2"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.4",
-    "@astrojs/sitemap": "^3.7.4",
-    "typescript": "^5.9.3"
+    "@astrojs/check": "0.9.12",
+    "@astrojs/sitemap": "3.7.4",
+    "prettier": "3.9.10",
+    "prettier-plugin-astro": "1.1.2",
+    "typescript": "5.9.3"
   }
 }

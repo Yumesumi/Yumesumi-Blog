@@ -1,0 +1,203 @@
+---
+/**
+ * 顶栏搜索框。
+ *
+ * 桌面端是窄输入框，聚焦时展开；窄屏收起为放大镜图标。
+ * 提交后统一跳到 /search/?q=... 结果页，而不是直接进入某篇文章。
+ */
+---
+
+<form class="hsearch" role="search" data-hsearch-form autocomplete="off">
+  <label class="ys-sr-only" for="hsearch-input">
+    搜索文章
+  </label>
+
+  <svg
+    class="hsearch__icon"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.8"
+    stroke-linecap="round"
+    aria-hidden="true"
+  >
+    <circle cx="11" cy="11" r="7"></circle>
+    <path d="M20 20l-3.5-3.5"></path>
+  </svg>
+
+  <input
+    id="hsearch-input"
+    class="hsearch__input"
+    type="search"
+    name="q"
+    placeholder="搜索文章…"
+    aria-label="搜索文章"
+    data-hsearch-input
+    enterkeyhint="search"
+  />
+
+  <button class="hsearch__submit" type="submit" aria-label="搜索">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.8"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M5 12h14M13 6l6 6-6 6"></path>
+    </svg>
+  </button>
+</form>
+
+<script>
+  const form = document.querySelector<HTMLFormElement>('[data-hsearch-form]');
+  const input = document.querySelector<HTMLInputElement>('[data-hsearch-input]');
+
+  if (form && input) {
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const query = input.value.trim();
+      if (!query) return;
+
+      const target = new URL(`${import.meta.env.BASE_URL}search/`, location.origin);
+      target.searchParams.set('q', query);
+      location.href = target.href;
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key !== '/' || event.metaKey || event.ctrlKey || event.altKey) return;
+      const active = document.activeElement;
+      if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) return;
+      if (input.offsetParent === null) return;
+      event.preventDefault();
+      input.focus();
+      input.select();
+    });
+  }
+</script>
+
+<style>
+  .hsearch {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .hsearch__icon {
+    position: absolute;
+    left: 0.65rem;
+    inline-size: 0.9rem;
+    block-size: 0.9rem;
+    color: var(--ys-text-muted);
+    pointer-events: none;
+    transition: color var(--ys-dur-fast) var(--ys-ease-out);
+  }
+
+  .hsearch__input {
+    inline-size: 9.5rem;
+    padding: 0.42rem 2rem;
+    font-size: var(--ys-fs-2xs);
+    line-height: 1.4;
+    color: var(--ys-text);
+    background-color: color-mix(in srgb, var(--ys-surface) 46%, transparent);
+    border: 1px solid var(--ys-border);
+    border-radius: var(--ys-radius-pill);
+    appearance: none;
+    transition:
+      width var(--ys-dur-base) var(--ys-ease-out),
+      border-color var(--ys-dur-fast) var(--ys-ease-out),
+      background-color var(--ys-dur-fast) var(--ys-ease-out);
+  }
+
+  .hsearch__input::-webkit-search-cancel-button {
+    display: none;
+  }
+
+  .hsearch__input::placeholder {
+    color: var(--ys-text-faint);
+  }
+
+  .hsearch__input:focus {
+    inline-size: 14rem;
+    outline: none;
+    border-color: var(--ys-border-strong);
+    background-color: var(--ys-surface);
+  }
+
+  .hsearch:focus-within .hsearch__icon {
+    color: var(--ys-lavender);
+  }
+
+  .hsearch__submit {
+    position: absolute;
+    right: 0.3rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 1.5rem;
+    block-size: 1.5rem;
+    color: var(--ys-text-muted);
+    background-color: transparent;
+    border: 0;
+    border-radius: 50%;
+    cursor: pointer;
+    opacity: 0;
+    transition:
+      opacity var(--ys-dur-fast) var(--ys-ease-out),
+      color var(--ys-dur-fast) var(--ys-ease-out),
+      background-color var(--ys-dur-fast) var(--ys-ease-out);
+  }
+
+  .hsearch:focus-within .hsearch__submit {
+    opacity: 1;
+  }
+
+  .hsearch__submit:hover {
+    color: var(--ys-lavender);
+    background-color: color-mix(in srgb, var(--ys-purple) 16%, transparent);
+  }
+
+  .hsearch__submit svg {
+    inline-size: 0.85rem;
+    block-size: 0.85rem;
+  }
+
+  @media (max-width: 1099px) {
+    .hsearch__input {
+      inline-size: 8rem;
+    }
+
+    .hsearch__input:focus {
+      inline-size: 11rem;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .hsearch__input {
+      inline-size: 2.15rem;
+      padding-inline: 1.85rem 0;
+      cursor: pointer;
+    }
+
+    .hsearch__input::placeholder {
+      color: transparent;
+    }
+
+    .hsearch__input:focus {
+      inline-size: 8.5rem;
+      padding-inline: 1.85rem 1.9rem;
+      cursor: text;
+    }
+
+    .hsearch__input:focus::placeholder {
+      color: var(--ys-text-faint);
+    }
+
+    .hsearch:not(:focus-within) .hsearch__submit {
+      display: none;
+    }
+  }
+</style>

@@ -1,7 +1,7 @@
 # 架构说明
 
 本文说明梦澄博客的模块划分、关键设计决策及其取舍理由。
-面向要读代码或改代码的人，不讲部署操作（见 [README](../README.md)）。
+面向要读代码或改代码的人，不讲日常发布操作（见 [README](../README.md)）。
 
 ---
 
@@ -9,22 +9,20 @@
 
 | 项 | 选择 | 理由 |
 | --- | --- | --- |
-| 框架 | Astro 7.3.5 | 纯静态输出，零前端运行时；内容集合做构建期校验 |
+| 框架 | Astro 7.4.2 | 纯静态输出，零前端运行时；内容集合做构建期校验 |
 | 内容 | Content Collections | Markdown + Zod schema，字段写错构建即报错 |
-| 代码高亮 | Shiki（内置） | 构建时着色，颜色直接写进 HTML，无客户端 JS |
-| 目录 | 手写 `public/CNAME` | 保留在构建产物里，Pages 部署不会丢 |
-| 部署 | GitHub Actions | 官方 action 走 artifact，不需要 gh-pages 分支 |
+| 代码高亮 | Shiki（内置，单主题） | 构建时着色，颜色直接写进 HTML，无客户端 JS |
+| 字体 | MiSans 可变字体子集 | 与梦澄中心统一；拉丁预加载，中文按 unicode-range 分片 |
+| 搜索 | 构建期 JSON 索引 + 原生 JS | 纯静态站点没有服务端；内容规模还没到需要分片 |
+| 部署 | GitHub Pages `gh-pages` 分支 | 本地构建后发布产物，不使用 Actions |
 
-**刻意不装的东西**（实测无必要或引入坑）：
+**刻意不装的东西**：
 
-- `rehype-toc` / `remark-heading` —— TOC 手渲，见决策 4
-- `@astrojs/rss` —— 需求明确不要
-- `@astrojs/mdx` —— 文章是纯 `.md`，引入 MDX 只增加构建负担
+- `rehype-toc` / `remark-heading` —— TOC 手渲，见决策 5
+- `@astrojs/rss` —— 当前没有订阅需求
+- `@astrojs/mdx` —— 文章是纯 `.md`
 - `tailwind` —— 站点规模小，手写 CSS 变量更直观
-- `@astrojs/markdown-remark` —— Astro 7 默认管线够用，见决策 3
-
-整站只有 3 处运行时 JS（主题切换、代码复制、回到顶部），全是原生代码，
-合计不到 100 行，没有 hydration。
+- 任何前端框架 —— 交互全部是原生小脚本
 
 ---
 
@@ -32,33 +30,50 @@
 
 ```text
 src/
-├── content.config.ts     内容集合定义（blog + pages）
-├── lib/                  ★ 纯逻辑，无框架依赖，可单测
-│   ├── posts.ts            查询文章、统计标签、标签路径、分享图
-│   ├── format.ts           日期格式化、阅读时长估算
-│   ├── site.ts             站点常量、绝对 URL 工具
-│   ├── search-index.ts     搜索索引生成（构建期）
-│   └── search-client.ts    搜索评分与匹配（浏览器端，顶栏与搜索页共用）
-├── plugins/
-│   └── relative-base.ts    构建后改写路径（见决策 1）
-├── styles/               全局 CSS，分 4 个文件
-│   ├── global.css           设计令牌、重置
-│   ├── theme.css            深浅双主题变量 + 星云背景
-│   ├── prose.css            正文排版
-│   └── shiki.css            代码高亮双主题覆写
+├── content.config.ts       内容集合定义（blog + pages）
+├── data/
+│   └── navigation.ts         顶栏、移动菜单、页脚共用的导航配置
+├── lib/                    ★ 纯逻辑，无框架依赖
+│   ├── posts.ts              查询文章、统计标签、标签路径、分享图
+│   ├── format.ts             日期格式化、阅读时长估算
+│   ├── site.ts               站点常量、绝对 URL；域名唯一来源
+│   ├── search-types.ts       搜索条目类型（构建期与浏览器端共用）
+│   ├── search-index.ts       搜索索引生成（构建期）
+│   └── search-client.ts      搜索评分、高亮、索引加载（浏览器端）
+├── styles/
+│   ├── tokens.css            设计令牌（颜色、字体、间距、动效）
+│   ├── global.css            reset、排版默认值、通用工具类
+│   ├── prose.css             正文排版（实色面板）
+│   └── shiki.css             代码块与复制按钮
 ├── layouts/
-│   ├── BaseLayout.astro    唯一持有 <html>；SEO、主题脚本、背景光晕
-│   └── PostLayout.astro    文章专用：头部信息 + TOC 侧栏 + 文末导航
-├── components/           10 个组件，全部无状态
-├── pages/                路由
-└── content/              ★ Markdown 内容（写文章改这里）
+│   ├── BaseLayout.astro      唯一持有 <html>；SEO、字体、环境层、导航、页脚
+│   └── PostLayout.astro      文章页：标题、正文、TOC、上下篇、相关阅读
+├── components/
+│   ├── ui/                   无业务状态的通用 UI
+│   │   ├── SiteNav.astro       固定顶栏 + 移动端全屏菜单
+│   │   ├── SiteFooter.astro    页脚
+│   │   ├── Hero.astro          首页首屏（文字扫光、HUD、扫描线）
+│   │   ├── HomeAmbience.astro  固定环境层（极光/网格/水印/星空/噪点）
+│   │   ├── StarField.astro     四芒星粒子
+│   │   ├── BrandLogo.astro     品牌标记（内联 SVG）
+│   │   └── PageHeader.astro    内页标题区
+│   └── blog/                 博客业务组件
+│       ├── PostCard.astro         文章卡片
+│       ├── TagPill.astro          标签胶囊
+│       ├── TableOfContents.astro  目录 + 滚动高亮
+│       ├── RelatedPosts.astro     相关阅读
+│       ├── HeaderSearch.astro     顶栏搜索框
+│       ├── CodeCopyButton.astro   代码复制（运行时注入）
+│       └── BackToTop.astro        回到顶部
+├── pages/                  路由
+└── content/                ★ Markdown 内容
     ├── blog/<slug>/index.md
     └── pages/about.md
 ```
 
 **分层原则**：`lib/` 不依赖 Astro 运行时，只依赖类型；
 `components/` 和 `layouts/` 依赖 `lib/`；`pages/` 组装三者。
-所以想改业务逻辑时，先看 `lib/` 有没有现成函数，避免往组件里堆逻辑。
+业务逻辑先看 `lib/` 有没有现成函数，不要往组件里堆。
 
 ---
 
@@ -73,136 +88,199 @@ src/content/blog/<slug>/index.md
         │
         │ ② lib/posts.ts 过滤草稿 + 排序
         ▼
-   Post[]  ──→  pages/index.astro      首页列表
-           ──→  pages/tags/index.astro  标签云
-           ──→  pages/blog/[...slug].astro  详情页
+   Post[]  ──→  pages/index.astro        首页列表
+           ──→  pages/tags/index.astro   标签索引
+           ──→  pages/tags/[tag].astro   单标签列表
+           ──→  pages/blog/[...slug].astro 详情页
                     │
                     │ ③ render(post) → { Content, headings }
                     ▼
-              PostLayout → BaseLayout → HTML
-```
+              PostLayout + <Content />
+                    │
+                    └── headings → TableOfContents（只取 h2/h3）
 
-**关键点**：`id` 由 `generateId` 剥掉 `/index` 后缀得到，所以 URL 是
-`/blog/hello-world/` 而不是 `/blog/hello-world/index/`。
-漏配这个选项不会报错，只是 URL 变难看 —— 已踩过。
+   lib/search-index.ts ──→ pages/search-index.json.ts ──→ /search-index.json
+                                                    │
+                                                    └── search-client.ts（顶栏 + 搜索页）
+```
 
 ---
 
-## 4. 关键设计决策
+## 4. 视觉系统
 
-### 决策 1：relative-base 插件（最重要）
+视觉目标：与梦澄中心（https://yumesumi.cyou/）保持同一套语言，而不是“相似的紫色博客”。
 
-**问题**：仓库名 `Yumesumi-Blog` 不是 `用户名.github.io` 形式，域名生效前
-GitHub Pages 把站点挂在 `/Yumesumi-Blog/` 子路径下，生效后移到根路径 `/`。
-两种情况需要的资源前缀不同，而 Astro 的 `base` 只能配一个绝对值：
-配 `base: '/'` 则子路径下 CSS 全 404，配 `base: '/Yumesumi-Blog'` 则域名生效后全 404。
+### 4.1 设计令牌
 
-Astro 也**不提供**「文档相对 base」——`base: './'` 会被规范化成根绝对路径。
+`src/styles/tokens.css` 是唯一颜色/字体/间距来源，沿用中心的 `--ys-*` 命名：
 
-**解法**：构建期用子路径前缀，构建完成后把 HTML 里的绝对路径改写成
-**文档相对路径**（`../../_astro/x.css`）。浏览器按当前文档地址逐级解析，
-于是两个地址同时可用，域名切换不需要改配置。
+- 背景层次：`--ys-void` → `--ys-abyss` → `--ys-night` → `--ys-deep` → `--ys-surface`
+- 品牌紫：`--ys-purple-deep` / `--ys-purple` / `--ys-purple-bright` / `--ys-lavender`
+- 正文面板：`--ys-prose-bg`（实色）、`--ys-code-bg`、`--ys-inline-code-bg`
+- 字体：MiSans + 系统中文回退；代码使用独立等宽栈 `--ys-font-code`
+- 动效：统一的 duration / easing 令牌
 
-**代价**：所有站内链接必须由插件改写，不能写绝对 URL。
-详见 `src/plugins/relative-base.ts` 的文件头注释。
+**只有深色一套**。所有组件不允许出现 `data-theme`、浅色分支或硬编码色值。
 
-### 决策 2：TOC 手渲，不用 rehype 插件
+### 4.2 字体
 
-`render(post)` 返回的 `headings` 数组含 `slug`，由 Astro 内置的
-github-slugger 生成，与正文标题 `id` 完全一致，在组件里手渲即可。
+`public/fonts/` 来自梦澄中心的 MiSans 子集：
 
-不装 `rehype-toc` 的决定性原因：**Astro 7 默认的 Sätteri（Rust）管线
-不消费 rehype 插件，且静默失效** —— 不报错、不警告、效果消失。
-用手渲还顺带避免了「TOC 注入正文内部打乱中文长文阅读节奏」的问题，
-目录作为 `<aside>` 与正文是兄弟节点。
+- `misans-latin.woff2`：拉丁、数字、符号（首屏字标需要，预加载）
+- `misans-sc-1..4.woff2`：GB2312 一级汉字，按 unicode-range 分片
+- 生僻字回落到系统字体，不影响阅读
 
-### 决策 3：不装 Markdown 插件
+### 4.3 环境层
 
-Astro 7 内置的 Sätteri 管线已包含 GFM、标题 ID、智能标点。
-全站零 Markdown 插件。若将来确需 rehype 插件，**必须**同时装
-`@astrojs/markdown-remark` 并显式配 `processor: unified({...})`，
-否则插件会静默失效。
+`HomeAmbience` 在 `BaseLayout` 中固定渲染，覆盖整个视口：
 
-### 决策 4：正文区必须实色
+```text
+极光雾光（3 团） → 科技网格 → 品牌水印 → 星空粒子 → 暗角 → 噪点
+```
 
-**这是硬性设计要求**：页面底层是星云光晕，但正文卡片
-（`.prose`）必须是**不透明实色**，不能有 `background-image`、
-`gradient` 或 `backdrop-filter`。
+`position: fixed; z-index: 0`，页面内容在 `main`（z-index 10）中。
+所有动画只改变 `transform` / `opacity`，并适配 `prefers-reduced-motion`。
 
-原因：中文长文对背景干扰比英文敏感得多，光晕透到文字背后会明显降低可读性。
+### 4.4 正文可读性（硬性约束）
 
-改动 `prose.css` 时务必保持这条约束。验证方式：
+`.prose` 是**实色面板**：`--ys-prose-bg` 不透明，无 `background-image`、
+无 gradient、无 `backdrop-filter`。页面星云只存在于正文面板之外。
+
+这是中文长文阅读体验的底线，任何视觉改版都不能打破。
+验证方式：
 
 ```js
-getComputedStyle(document.querySelector('.prose')).backgroundImage  // 必须是 "none"
+getComputedStyle(document.querySelector('.prose')).backgroundImage === 'none'
+getComputedStyle(document.querySelector('.prose')).backdropFilter === 'none'
 ```
 
-### 决策 5：浅色主题单独调色
+---
 
-浅色**不是**深色的反转值（`filter: invert()` 之类）。
-两套色在 `theme.css` 里分开定义，各自单独调过：
+## 5. 关键决策与取舍
 
-- 深色是夜空星云：`#1A1035` 底 + 粉紫光晕
-- 浅色是晨雾淡紫：`#FDFBFF` 底（带一点紫，非死白）+ 更淡的光晕
+### 决策 1：只保留自定义域名根路径，删除双路径兼容层
 
-浅色下光晕透明度要**更低**（0.14 vs 0.22）——浅底上同等透明度会显脏。
+旧方案为了让 `yumesumi.cyou` 和 `github.io/Yumesumi-Blog/` 同时可用，
+把 `base` 设为 `/Yumesumi-Blog`，构建后再用 `relative-base` 插件把 HTML 里的
+绝对路径改写成文档相对路径，同时修正 canonical / sitemap。
 
-**改配色时两套都要改**，否则会出现某个颜色只在单主题下不协调。
+现在博客固定使用 `blog.yumesumi.cyou`（GitHub Pages 也会把仓库地址 301 到自定义域名），
+这套兼容层变成了纯负担：
 
-对比度已实测：正文深浅均为 AAA（14.5:1 / 15.7:1），最低项 5.54:1（AA）。
+- 每个链接/资源都要经过一次构建后字符串改写
+- JS 动态创建的链接需要额外的 `toSiteUrl()` 运行时换算
+- canonical / sitemap 需要额外修正
+- 任何遗漏都会在某一访问方式下 404
 
-### 决策 6：深浅切换的三层结构
+因此删除 `src/plugins/relative-base.ts`，`base` 改回 `/`，
+所有站内链接直接使用站点绝对路径，`search-index.json` 也可直接 fetch。
 
-| 层 | 手段 | 职责 |
-| --- | --- | --- |
-| 无 JS 兜底 | `@media (prefers-color-scheme: dark)` | 首帧正确，不白屏 |
-| 用户偏好 | `html[data-theme]` | 唯一权威开关 |
-| 配色 | `:root` + `html[data-theme='dark']` | 实际色值 |
+**取舍**：不再支持 `github.io/Yumesumi-Blog/` 直接访问（会被 Pages 301 到自定义域名）。
+这是可接受的：站点只有一个正式地址。
 
-防 FOUC 脚本内联在 `<head>` 最前且必须 `is:inline`（否则被打包成
-`type=module"` 变异步，页面会先闪一下浅色），并用 `try/catch` 兜住
-Safari 无痕模式下 `localStorage` 抛异常的情况。
+### 决策 2：部署改为 `gh-pages` 分支，不使用 Actions
 
-用户显式选择后不再跟随系统变化（`@media` 规则的特异性低于
-`html[data-theme]`，天然实现这个优先级）。
+`tools/deploy-pages.mjs`：
+
+1. 本地 `npm run build`
+2. 校验 `dist/index.html`、`dist/CNAME`
+3. 复制到暂存目录，写入 `.nojekyll`
+4. 用独立 git index 生成提交，推送到 `gh-pages`
+5. Pages 检测到分支更新后自动发布
+
+**取舍**：
+
+- 优点：不占 CI 配额、不受 Actions 排队影响、发布时机完全可控
+- 缺点：发布依赖本地环境；`gh-pages` 分支的历史是构建产物，不适合追溯源码
+
+源码在 `main`，产物在 `gh-pages`，两边职责清晰。
+
+### 决策 3：搜索索引走 endpoint，而不是构建插件
+
+Astro 配置文件在 `astro:content` 就绪前加载，插件在 `build:done` 阶段
+也无法稳定访问内容集合。`src/pages/search-index.json.ts` 由 Astro 正常编译，
+可以直接调用 `buildSearchIndex()`，并且会自动进入构建产物。
+
+索引每条正文截断 2000 字，约 100 篇文章时在 1MB 量级，浏览器一次加载无压力。
+
+### 决策 4：搜索在前端打分，不引入搜索库
+
+内容规模只有几十篇，Fuse.js / FlexSearch 都会增加依赖和索引体积。
+当前使用确定性的子串匹配 + 字段权重（标题 10 / 标签 5 / 摘要 3 / 正文 1），
+多关键词空格分隔，完整短语命中标题额外 +8。
+
+优点：零依赖、行为可预测、容易写断言；
+缺点：没有分词与模糊匹配。中文搜索以子串命中为主，当前规模足够。
+
+### 决策 5：目录手渲 + 滚动位置高亮
+
+Astro 7 的 Markdown 管线不消费 rehype 插件，且插件失效时不报错。
+因此目录直接从 `render(post)` 返回的 `headings` 渲染，只取 h2/h3。
+
+高亮采用滚动位置比较（最后一个越过阅读线的标题），而不是
+IntersectionObserver 的窄观察带：锚点直达或快速跳转时更稳定。
+
+桌面是 sticky 侧栏，移动端是 `<details>` 折叠目录。**两个实例共用组件，
+脚本必须用 `querySelectorAll` 初始化全部实例**，否则桌面目录没有高亮。
+
+### 决策 6：代码复制按钮运行时注入
+
+代码块由 Markdown 渲染，不在 Astro 组件树里。`CodeCopyButton` 只包含脚本，
+运行时扫描 `pre.astro-code` 并注入按钮；组件本身**不能渲染按钮标记**，
+否则文章末尾会多出一个游离按钮。
+
+复制逻辑保留 `document.execCommand` 降级：`navigator.clipboard` 只在安全上下文可用。
+
+### 决策 7：分享图放 public，正文图走 Astro 优化
+
+正文图片会被 Astro 优化成带内容哈希的 `_astro/` 资源，构建前无法预知 URL，
+不适合作为 `og:image`。因此分享图单独放在 `public/blog/<slug>/cover.png`，
+路径稳定可预测；没有则回退 `public/og-default.png`。
+
+默认图使用 PNG 而不是 SVG：主流社交平台对 SVG 的 OG 支持不完整。
+
+### 决策 8：纯深色，取消主题切换
+
+视觉对齐梦澄中心，中心只有深色。取消浅色主题后：
+
+- 删除 `ThemeToggle`、`data-theme` 分支与首帧防闪烁脚本
+- 样式只维护一套，不会出现深浅不同步
+- `color-scheme: dark` 与 `theme-color` 固定
 
 ---
 
-## 5. 主题更新的常见错误
+## 6. 部署链路
 
-代码高亮配了双主题（`themes: { light, dark }`），Shiki 会输出两套 CSS 变量，
-**必须手写 CSS 在深色下切到 `--shiki-dark*`**。官方文档要求用
-`.astro-code` 类名（不是 `.shiki`），且选择器前缀用 `html[data-theme='dark']`
-而非 media query —— 用户手动切换后系统偏好不再权威。
+```text
+本地 npm run deploy
+  → astro build（生成 dist/）
+  → 校验 dist/CNAME = blog.yumesumi.cyou
+  → 提交 dist 内容到 gh-pages（force push）
+  → GitHub Pages 发布
+  → Cloudflare（blog.yumesumi.cyou，橙云）
+  → 浏览器
+```
 
----
-
-## 6. 站点地址相关的约束
-
-| 项 | 值 | 说明 |
-| --- | --- | --- |
-| 站点 | `https://yumesumi.cyou/` | 自定义域名，根路径 |
-| 回退 | `https://yumesumi.github.io/Yumesumi-Blog/` | 同样能正常显示 |
-| CNAME | `public/CNAME` 单行 `yumesumi.cyou` | **不可有多余换行**，否则 Pages 设置失败 |
-| SSL 模式 | Cloudflare 设 `Full` | 不能用 `strict`（续期失败会 526）或 `flexible`（无限重定向） |
-| Enforce HTTPS | **关** | 只开 Cloudflare 一层，避免 `ERR_TOO_MANY_REDIRECTS` |
-
-部署与运维细节见 [docs/force-https.md](force-https.md) 和
-[docs/cloudflare-dns-setup.md](cloudflare-dns-setup.md)。
+Pages 配置：Deploy from a branch，`gh-pages` / root，Custom domain
+`blog.yumesumi.cyou`。仓库中没有任何 workflow。
 
 ---
 
-## 7. 加内容 / 加功能
+## 7. 已知约束
 
-**加文章**：见 README 的「发布一篇新内容」。只需建文件夹写 `.md`。
+- 仓库必须 public（免费版 Pages 限制）
+- 自定义域名证书受 Cloudflare 橙云影响，SSL 模式必须 `Full`，见 [force-https.md](force-https.md)
+- 字体子集只覆盖 GB2312 一级汉字，生僻字回落系统字体
+- `public/CNAME` 必须单行且无尾随换行
+- 草稿不生成页面，也不进搜索索引
+- 站点无后端，搜索为纯前端子串匹配
 
-**加页面**：在 `src/pages/` 建 `.astro`，需要 SEO 元信息就包一层 `BaseLayout`。
+---
 
-**加组件**：放 `src/components/`，写成无状态组件（props 进、slot 出），
-样式用 `<style>` 块（Astro 自动 scope）。不要在组件里写业务逻辑，
-逻辑放 `lib/`。
+## 8. 扩展点
 
-**改配色**：只改 `src/styles/theme.css`，深浅两套一起改。
-
-**改插件**：`src/plugins/relative-base.ts`。注意改完要验证：
-资源引用是相对路径、canonical 无仓库前缀、目录链接有尾斜杠。
+- 新页面：在 `src/pages/` 添加，复用 `BaseLayout` / `PageHeader`
+- 新文章字段：在 `src/content.config.ts` 的 schema 添加，然后同步 `PostCard` / `PostLayout`
+- 新搜索权重：改 `src/lib/search-client.ts` 的 `W`，同时更新 `scripts/verify-search.mjs`
+- 新环境效果：加在 `HomeAmbience` 内，注意 `prefers-reduced-motion` 与合成层开销
+- 归档页：新增 `src/pages/archive.astro`，用 `getPublishedPosts()` 按年份分组

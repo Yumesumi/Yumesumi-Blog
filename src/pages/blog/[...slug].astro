@@ -1,8 +1,8 @@
 ---
 import { render } from 'astro:content';
-import type { Post } from '../../lib/posts';
-import { getPublishedPosts } from '../../lib/posts';
-import PostLayout from '../../layouts/PostLayout.astro';
+import type { Post } from '@/lib/posts';
+import { getPublishedPosts } from '@/lib/posts';
+import PostLayout from '@/layouts/PostLayout.astro';
 
 export async function getStaticPaths() {
   // 草稿不生成页面：静态构建不知道你的意图，draft 只是一个字段，
@@ -13,8 +13,7 @@ export async function getStaticPaths() {
     // 相关推荐：标签有交集的其他文章（排除自己）
     const related = posts.filter(
       (candidate) =>
-        candidate.id !== post.id &&
-        candidate.data.tags.some((tag) => post.data.tags.includes(tag)),
+        candidate.id !== post.id && candidate.data.tags.some((tag) => post.data.tags.includes(tag)),
     );
 
     return {
@@ -40,9 +39,6 @@ interface Props {
 
 const { post, related, prevPost, nextPost } = Astro.props satisfies Props;
 
-// Astro 7 用从 astro:content 导入的 render(post)，旧的 post.render() 已被移除。
-// headings 里的 slug 由 Astro 内置的 github-slugger 生成，与正文标题 id 一致，
-// 所以目录链接必然能跳转。
 const { Content, headings } = await render(post);
 ---
 

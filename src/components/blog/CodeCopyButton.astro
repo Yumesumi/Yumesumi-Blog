@@ -1,25 +1,14 @@
-<button class="code-copy" type="button" data-code-copy aria-label="复制代码">
-  <svg
-    class="code-copy__icon"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    stroke-width="1.8"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-    aria-hidden="true"
-  >
-    <rect x="9" y="9" width="12" height="12" rx="2"></rect>
-    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-  </svg>
-  <span class="code-copy__label">复制</span>
-</button>
+---
+/**
+ * 代码块复制按钮。
+ *
+ * 代码块由 Markdown 渲染生成，不在 Astro 组件树里，
+ * 所以只能在运行时扫描 DOM 注入按钮。逻辑与样式分离：
+ * 按钮样式在 styles/shiki.css，这里只负责行为。
+ */
+---
 
 <script>
-  /**
-   * 代码块由 Markdown 渲染生成，不在 Astro 组件树里，
-   * 所以只能在运行时扫描 DOM 注入按钮。
-   */
   function initCopyButtons() {
     const blocks = document.querySelectorAll('pre.astro-code');
     blocks.forEach((pre) => {
@@ -41,25 +30,17 @@
   }
 
   async function copyText(text: string): Promise<boolean> {
-    // navigator.clipboard 需要安全上下文（HTTPS 或 localhost）。
-    // 线上如果因 SSL 配置问题走了 HTTP，这里会失败，需要降级。
+    // navigator.clipboard 只在安全上下文（HTTPS / localhost）可用；
+    // 若站点因 SSL 配置问题走了 HTTP，execCommand 是唯一还能复制的方式。
     if (navigator.clipboard && window.isSecureContext) {
       try {
         await navigator.clipboard.writeText(text);
         return true;
       } catch {
-        /* 落到下面的降级分支 */
+        /* 落到降级分支 */
       }
     }
 
-    // 降级方案。
-    //
-    // 为什么要保留：navigator.clipboard 只在安全上下文（HTTPS / localhost）
-    // 可用。若 SSL 配置有误导致站点走 HTTP，主 API 会直接不可用，
-    // 此时 execCommand 是唯一还能复制的方式。
-    //
-    // 它虽已被标记废弃，但浏览器仍普遍支持，且没有等价替代 API，
-    // 所以这里刻意保留。astro check 报的 ts(6387) 弃用提示是预期的。
     try {
       const ta = document.createElement('textarea');
       ta.value = text;
@@ -76,7 +57,6 @@
     }
   }
 
-  // 用事件委托，一个监听器处理所有按钮
   document.addEventListener('click', async (event) => {
     const target = event.target as HTMLElement | null;
     const button = target?.closest<HTMLElement>('[data-code-copy]');
@@ -101,10 +81,3 @@
 
   initCopyButtons();
 </script>
-
-<style>
-  /* 这里的样式在 styles/shiki.css 中，这里只保留组件内的兜底 */
-  .code-copy__label {
-    white-space: nowrap;
-  }
-</style>

@@ -1,13 +1,13 @@
 import type { APIRoute } from 'astro';
+import { SITE_ORIGIN } from '@/lib/site';
 
 /**
  * 动态生成 robots.txt。
- * 用 .ts 而不是放在 public/ 里的原因：sitemap 地址要手写域名的话，
- * 换域名就得改两个文件。这里从 astro.config 的 site 派生，改一处即可。
+ * Sitemap 地址从 astro.config 的 site 派生，换域名时只需改 site.ts 一处。
  */
 export const GET: APIRoute = ({ site }) => {
-  const base = site ?? new URL('https://yumesumi.cyou');
-  const sitemapUrl = new URL('/sitemap-index.xml', base).href;
+  const origin = site ?? new URL(SITE_ORIGIN);
+  const sitemapUrl = new URL('/sitemap-index.xml', origin).href;
 
   const body = `User-agent: *
 Allow: /

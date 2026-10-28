@@ -1,0 +1,57 @@
+---
+import { tagPath } from '@/lib/posts';
+
+export interface Props {
+  tag: string;
+  count?: number;
+  active?: boolean;
+}
+
+const { tag, count, active = false } = Astro.props satisfies Props;
+
+const label = count !== undefined ? `标签：${tag}，共 ${count} 篇文章` : `标签：${tag}`;
+---
+
+<a href={tagPath(tag)} class:list={['tag-pill', { 'is-active': active }]} aria-label={label}>
+  <span>{tag}</span>
+  {count !== undefined && <span class="tag-pill__count">{count}</span>}
+</a>
+
+<style>
+  .tag-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45em;
+    padding: 0.22em 0.72em;
+    font-size: var(--ys-fs-2xs);
+    line-height: 1.6;
+    letter-spacing: 0.02em;
+    color: var(--ys-text-muted);
+    background-color: color-mix(in srgb, var(--ys-surface) 52%, transparent);
+    border: 1px solid var(--ys-border);
+    border-radius: var(--ys-radius-pill);
+    transition:
+      color var(--ys-dur-fast) var(--ys-ease-out),
+      border-color var(--ys-dur-fast) var(--ys-ease-out),
+      background-color var(--ys-dur-fast) var(--ys-ease-out);
+  }
+
+  .tag-pill:hover,
+  .tag-pill:focus-visible {
+    color: var(--ys-lavender);
+    border-color: var(--ys-border-strong);
+    background-color: color-mix(in srgb, var(--ys-purple) 12%, transparent);
+  }
+
+  .tag-pill.is-active {
+    color: var(--ys-text-inverse);
+    background-color: var(--ys-lavender);
+    border-color: var(--ys-lavender);
+  }
+
+  .tag-pill__count {
+    font-size: 0.92em;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.72;
+  }
+</style>

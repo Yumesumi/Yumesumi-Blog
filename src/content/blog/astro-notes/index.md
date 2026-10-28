@@ -48,18 +48,20 @@ src/content/blog/
 
 ## 部署
 
-推送到 GitHub 之后，GitHub Actions 自动构建并发布到 Pages。整个流程是：
+站点不使用 GitHub Actions。发布由本地脚本完成：
 
-```text
-本地改文章 → git push → Actions 自动构建 → 网站更新
+```bash
+npm run deploy
 ```
 
-日常只需要 `git push`，不用手动构建。
+它会在本地构建，然后把 `dist/` 的产物提交到 `gh-pages` 分支并推送。
+GitHub Pages 的 Source 设为 `gh-pages` 分支，构建产物一到位就自动发布。
+好处是发布时机完全可控，也不用等 CI 排队；日常写作仍然只是改 Markdown。
 
-域名方面，站点挂在根域名 `yumesumi.cyou` 下，由 Cloudflare 代理。**这里有个需要长期注意的坑**：Cloudflare 开启代理后，GitHub 无法完成自己证书的自动续期，SSL 模式如果设成 `Full (strict)`，大约三个月后证书续期失败会导致站点直接打不开。所以 SSL 模式要设成 `Full`。
+域名是 `blog.yumesumi.cyou`，由 Cloudflare 代理。**这里有个需要长期注意的坑**：Cloudflare 开启代理后，GitHub 无法完成自己证书的自动续期，SSL 模式如果设成 `Full (strict)`，大约三个月后证书续期失败会导致站点直接打不开。所以 SSL 模式要设成 `Full`。
 
 ## 性能
 
-整站只有三处用到 JavaScript：主题切换、代码复制按钮、回到顶部，加起来不到 100 行原生代码。没有前端框架运行时，没有客户端渲染，页面加载就是纯 HTML。
+站点没有前端框架运行时，没有客户端渲染，页面加载就是纯 HTML。主题切换已经取消，整站只有一套深色视觉；搜索、目录高亮、代码复制、回到顶部这些交互都是原生小脚本，构建时不会产生额外的组件 JS。
 
 内容之外唯一的服务端功能是代码高亮，但那是**构建时**完成的，不是访问时——每个代码块的颜色在构建时就固定在 HTML 里了。

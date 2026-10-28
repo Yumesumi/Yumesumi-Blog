@@ -1,12 +1,12 @@
 ---
 import { getEntry, render } from 'astro:content';
-import { getPublishedPosts } from '../lib/posts';
-import BaseLayout from '../layouts/BaseLayout.astro';
-import CodeCopyButton from '../components/CodeCopyButton.astro';
-import BackToTop from '../components/BackToTop.astro';
+import { getPublishedPosts } from '@/lib/posts';
+import { CENTER_NAME, CENTER_URL } from '@/lib/site';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import PageHeader from '@/components/ui/PageHeader.astro';
+import CodeCopyButton from '@/components/blog/CodeCopyButton.astro';
+import BackToTop from '@/components/blog/BackToTop.astro';
 
-// 关于页内容在 src/content/pages/about.md，用 Markdown 编写。
-// 好处是改文字不用碰代码，且不会混进文章列表。
 const page = await getEntry('pages', 'about');
 
 if (!page) {
@@ -19,13 +19,37 @@ const [{ Content }, posts] = await Promise.all([render(page), getPublishedPosts(
 ---
 
 <BaseLayout title={page.data.title} description={page.data.description}>
-  <div class="container">
+  <div class="about-page ys-page ys-container">
+    <PageHeader eyebrow="ABOUT" title={page.data.title} description={page.data.description} />
+
     <div class="prose">
       <Content />
     </div>
     <CodeCopyButton />
 
-    <p class="about__footnote">
+    <aside class="about-center ys-card">
+      <div>
+        <p class="ys-eyebrow">YUMESUMI CENTER</p>
+        <h2 class="about-center__title">想看看完整的梦澄？</h2>
+        <p class="about-center__desc">博客之外，还有梦澄指数、梦澄服、模组、实验室与工作室。</p>
+      </div>
+
+      <a class="ys-button" href={CENTER_URL} target="_blank" rel="noopener noreferrer">
+        <span>前往{CENTER_NAME}</span>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M7 17 17 7M9 7h8v8"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          ></path>
+        </svg>
+      </a>
+    </aside>
+
+    <p class="about-footnote">
       目前共有 {posts.length} 篇已发布文章 · <a href="/tags/">按标签浏览</a>
     </p>
   </div>
@@ -34,10 +58,47 @@ const [{ Content }, posts] = await Promise.all([render(page), getPublishedPosts(
 </BaseLayout>
 
 <style>
-  .about__footnote {
-    margin-top: var(--space-5);
+  .about-page {
+    max-inline-size: var(--ys-reading-width);
+  }
+
+  .about-center {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ys-space-md);
+    margin-block-start: var(--ys-space-xl);
+    padding: var(--ys-space-lg);
+    background-color: color-mix(in srgb, var(--ys-deep) 74%, transparent);
+  }
+
+  .about-center__title {
+    margin-block: var(--ys-space-2xs) 0.3rem;
+    font-size: var(--ys-fs-lg);
+    font-weight: var(--ys-weight-light);
+  }
+
+  .about-center__desc {
+    font-size: var(--ys-fs-sm);
+    color: var(--ys-text-muted);
+    line-height: var(--ys-lh-relaxed);
+  }
+
+  .about-footnote {
+    margin-block-start: var(--ys-space-xl);
     text-align: center;
-    font-size: 0.875rem;
-    color: var(--text-muted);
+    font-size: var(--ys-fs-xs);
+    color: var(--ys-text-faint);
+  }
+
+  .about-footnote a {
+    color: var(--ys-text-muted);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  .about-footnote a:hover {
+    color: var(--ys-lavender);
   }
 </style>

@@ -1,20 +1,29 @@
 /**
- * 站点级常量与 URL 工具。
+ * 站点级常量。
  *
- * 域名、站名、默认分享图这些值在多个页面和布局里都要用，
- * 集中在这里定义，避免各处硬编码后不一致（尤其 og:image ——
- * 之前 BaseLayout 指向的占位图文件并不存在，分享时预览图会裂）。
+ * 这里是所有对外可见的站点信息的唯一来源：域名、站名、描述、
+ * 联系方式与默认分享图。astro.config.mjs 也从这里读取域名，
+ * 改域名时只需改 {@link SITE_ORIGIN} 一处。
  */
 
-/** 站点主域名，与 astro.config.mjs 的 site 一致。 */
-export const SITE_ORIGIN = 'https://yumesumi.cyou';
+/** 站点主域名（与 astro.config.mjs 的 site 一致）。 */
+export const SITE_ORIGIN = 'https://blog.yumesumi.cyou';
+
+/** 梦澄中心，博客的上一级门户。 */
+export const CENTER_URL = 'https://yumesumi.cyou/';
+export const CENTER_NAME = '梦澄中心';
 
 export const SITE_NAME = '梦澄博客';
-
+export const SITE_WORDMARK = 'YUMESUMI BLOG';
+export const SITE_TAGLINE = '记录 · 思考 · 分享';
 export const SITE_DESCRIPTION = '梦澄的个人博客，记录技术笔记、阅读与思考。';
 
-/** 默认分享图（1200×630，Open Graph 推荐尺寸）。 */
-export const DEFAULT_OG_IMAGE = '/og-default.svg';
+export const SITE_AUTHOR = 'Yumesumi';
+export const SITE_EMAIL = 'YumesumiArikki@outlook.com';
+export const SITE_GITHUB = 'https://github.com/Yumesumi/Yumesumi-Blog';
+
+/** 默认分享图（1200×630）。 */
+export const DEFAULT_OG_IMAGE = '/og-default.png';
 
 /**
  * 把站内绝对路径转成完整 URL。
@@ -25,18 +34,4 @@ export const DEFAULT_OG_IMAGE = '/og-default.svg';
 export function absoluteUrl(path: string): string {
   if (/^https?:\/\//.test(path)) return path;
   return new URL(path, SITE_ORIGIN).href;
-}
-
-/** 默认分享图完整 URL。 */
-export const defaultOgImage = DEFAULT_OG_IMAGE;
-
-/**
- * 文章的分享图 URL。
- *
- * 优先用文章自己的封面图（与 index.md 同级的 cover.*），
- * 没有则回退到站点默认图。构建后由 relative-base 插件
- * 把 HTML 里的站内绝对路径改写为相对路径，此处只负责拼原始值。
- */
-export function postOgImage(coverPath?: string): string {
-  return coverPath ?? DEFAULT_OG_IMAGE;
 }

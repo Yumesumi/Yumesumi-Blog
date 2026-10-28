@@ -1,0 +1,475 @@
+---
+/**
+ * 首页 Hero。
+ *
+ * 文字层 + 首屏装饰层：扫描线、HUD 角框与跟随指针的文字高光。
+ * 背景的品牌水印、星空与极光来自 BaseLayout 里的 HomeAmbience，
+ * 这一层只负责首屏自己的空气感。
+ */
+import { CENTER_NAME, CENTER_URL, SITE_DESCRIPTION } from '@/lib/site';
+import { formatDateLong } from '@/lib/format';
+
+interface Props {
+  postCount: number;
+  tagCount: number;
+  latestDate?: Date;
+}
+
+const { postCount, tagCount, latestDate } = Astro.props satisfies Props;
+---
+
+<section class="hero" data-hero>
+  <div class="hero__backdrop" aria-hidden="true">
+    <div class="hero__glow"></div>
+    <div class="hero__scan"></div>
+
+    <div class="hero__hud">
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+  </div>
+
+  <div class="hero__content ys-container ys-container--wide">
+    <p class="hero__eyebrow">YUMESUMI BLOG · EST. 2026</p>
+
+    <h1 class="hero__wordmark" data-spotlight>
+      <span class="hero__wordmark-line">YUMESUMI</span>
+      <span class="hero__wordmark-line">BLOG</span>
+    </h1>
+
+    <p class="hero__name-zh" data-spotlight>
+      梦澄博客
+    </p>
+
+    <p class="hero__lede">{SITE_DESCRIPTION}</p>
+
+    <div class="hero__actions">
+      <a class="hero__cta" href="#writings">
+        <span>开始阅读</span>
+        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+          <path
+            d="M12 5v14M6 13l6 6 6-6"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          ></path>
+        </svg>
+      </a>
+
+      <a class="hero__center" href={CENTER_URL} target="_blank" rel="noopener noreferrer">
+        <span>前往{CENTER_NAME}</span>
+        <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true">
+          <path
+            d="M7 17 17 7M9 7h8v8"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          ></path>
+        </svg>
+      </a>
+    </div>
+
+    <p class="hero__meta">
+      <span>{postCount} 篇文章</span>
+      <span aria-hidden="true">/</span>
+      <span>{tagCount} 个标签</span>
+      {latestDate && (
+        <>
+          <span aria-hidden="true">/</span>
+          <span>最近更新 {formatDateLong(latestDate)}</span>
+        </>
+      )}
+    </p>
+  </div>
+</section>
+
+<style>
+  .hero {
+    position: relative;
+    display: grid;
+    align-content: center;
+    min-block-size: 100svh;
+    padding-block: calc(var(--ys-nav-height) + var(--ys-space-2xl)) var(--ys-space-2xl);
+    overflow: clip;
+    isolation: isolate;
+    background: radial-gradient(
+      120% 78% at 50% 6%,
+      color-mix(in srgb, var(--ys-deep) 46%, transparent) 0%,
+      color-mix(in srgb, var(--ys-night) 26%, transparent) 44%,
+      transparent 76%
+    );
+  }
+
+  .hero__backdrop {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .hero__glow {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 50%;
+    inline-size: min(92vw, 60rem);
+    aspect-ratio: 1;
+    translate: -50% -50%;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle,
+      color-mix(in srgb, var(--ys-purple) 22%, transparent) 0%,
+      color-mix(in srgb, var(--ys-purple-deep) 12%, transparent) 42%,
+      transparent 70%
+    );
+  }
+
+  .hero__scan {
+    position: absolute;
+    inset-inline: 0;
+    inset-block-start: 14%;
+    block-size: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      color-mix(in srgb, var(--ys-lavender) 24%, transparent) 28%,
+      color-mix(in srgb, var(--ys-lavender-soft) 42%, transparent) 50%,
+      color-mix(in srgb, var(--ys-lavender) 24%, transparent) 72%,
+      transparent 100%
+    );
+    box-shadow: 0 0 22px var(--ys-accent-glow);
+    opacity: 0;
+    animation: ys-scan-sweep var(--ys-dur-scan) var(--ys-ease-smooth) infinite;
+  }
+
+  .hero__hud {
+    position: absolute;
+    inset-block-start: calc(var(--ys-nav-height) + var(--ys-space-sm));
+    inset-block-end: var(--ys-space-lg);
+    inset-inline: var(--ys-gutter);
+    opacity: var(--ys-hud-opacity);
+  }
+
+  .hero__hud span {
+    position: absolute;
+    inline-size: clamp(1rem, 2vw, 1.75rem);
+    aspect-ratio: 1;
+    border: 0 solid color-mix(in srgb, var(--ys-lavender) 34%, transparent);
+  }
+
+  .hero__hud span:nth-child(1) {
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    border-block-start-width: 1px;
+    border-inline-start-width: 1px;
+  }
+
+  .hero__hud span:nth-child(2) {
+    inset-block-start: 0;
+    inset-inline-end: 0;
+    border-block-start-width: 1px;
+    border-inline-end-width: 1px;
+  }
+
+  .hero__hud span:nth-child(3) {
+    inset-block-end: 0;
+    inset-inline-start: 0;
+    border-block-end-width: 1px;
+    border-inline-start-width: 1px;
+  }
+
+  .hero__hud span:nth-child(4) {
+    inset-block-end: 0;
+    inset-inline-end: 0;
+    border-block-end-width: 1px;
+    border-inline-end-width: 1px;
+  }
+
+  .hero__content {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+  }
+
+  .hero__eyebrow {
+    margin-block-end: var(--ys-space-md);
+    font-size: var(--ys-fs-3xs);
+    font-weight: var(--ys-weight-medium);
+    letter-spacing: var(--ys-ls-widest);
+    color: var(--ys-text-faint);
+    text-transform: uppercase;
+  }
+
+  .hero__wordmark {
+    --mx: 50%;
+    --my: 50%;
+    display: grid;
+    gap: 0.04em;
+    margin: 0;
+    font-size: var(--ys-fs-display);
+    font-weight: var(--ys-weight-thin);
+    line-height: var(--ys-lh-tight);
+    letter-spacing: var(--ys-ls-tight);
+    background-image:
+      radial-gradient(
+        ellipse calc(var(--ys-spotlight-size) * 1.25) calc(var(--ys-spotlight-size) * 0.6) at
+          var(--mx) var(--my),
+        var(--ys-text) 0%,
+        color-mix(in srgb, var(--ys-text) 62%, transparent) 46%,
+        transparent 80%
+      ),
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--ys-text) 52%, var(--ys-lavender)) 20%,
+        color-mix(in srgb, var(--ys-lavender) 88%, var(--ys-text)) 78%,
+        color-mix(in srgb, var(--ys-lavender) 82%, var(--ys-purple-bright)) 100%
+      );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 36px color-mix(in srgb, var(--ys-void) 85%, transparent));
+  }
+
+  .hero__wordmark-line {
+    display: block;
+  }
+
+  .hero__name-zh {
+    --mx: 50%;
+    --my: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ys-space-md);
+    margin-block: var(--ys-space-sm) 0;
+    font-size: var(--ys-fs-4xl);
+    font-weight: var(--ys-weight-thin);
+    line-height: 1.12;
+    letter-spacing: var(--ys-ls-cinematic);
+    background-image:
+      radial-gradient(
+        ellipse calc(var(--ys-spotlight-size) * 1.15) calc(var(--ys-spotlight-size) * 0.55) at
+          var(--mx) var(--my),
+        var(--ys-text) 0%,
+        color-mix(in srgb, var(--ys-text) 60%, transparent) 46%,
+        transparent 80%
+      ),
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--ys-text) 70%, var(--ys-lavender)) 0%,
+        color-mix(in srgb, var(--ys-text) 38%, var(--ys-lavender)) 100%
+      );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 22px var(--ys-void));
+  }
+
+  .hero__name-zh::before,
+  .hero__name-zh::after {
+    content: '';
+    flex: 0 0 auto;
+    inline-size: clamp(1.5rem, 7vw, 4.5rem);
+    block-size: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      color-mix(in srgb, var(--ys-lavender) 55%, transparent) 100%
+    );
+  }
+
+  .hero__name-zh::after {
+    transform: scaleX(-1);
+  }
+
+  .hero__lede {
+    max-inline-size: 34rem;
+    margin-block-start: var(--ys-space-lg);
+    margin-inline: auto;
+    font-size: var(--ys-fs-base);
+    line-height: var(--ys-lh-relaxed);
+    color: var(--ys-text-secondary);
+    text-shadow:
+      0 0 14px var(--ys-void),
+      0 0 28px var(--ys-void);
+  }
+
+  .hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ys-space-md);
+    margin-block-start: var(--ys-space-xl);
+  }
+
+  .hero__cta,
+  .hero__center {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ys-space-2xs);
+    padding: var(--ys-space-xs) var(--ys-space-md);
+    border: 1px solid var(--ys-border-strong);
+    border-radius: var(--ys-radius-pill);
+    font-size: var(--ys-fs-sm);
+    font-weight: var(--ys-weight-medium);
+    letter-spacing: var(--ys-ls-wide);
+    color: var(--ys-text);
+    transition:
+      border-color var(--ys-dur-base) var(--ys-ease-out),
+      background-color var(--ys-dur-base) var(--ys-ease-out),
+      box-shadow var(--ys-dur-base) var(--ys-ease-out),
+      transform var(--ys-dur-base) var(--ys-ease-out);
+  }
+
+  .hero__cta:hover,
+  .hero__cta:focus-visible,
+  .hero__center:hover,
+  .hero__center:focus-visible {
+    border-color: var(--ys-purple);
+    background-color: color-mix(in srgb, var(--ys-purple) 14%, transparent);
+    box-shadow:
+      var(--ys-shadow-glow),
+      inset 0 0 18px color-mix(in srgb, var(--ys-purple) 12%, transparent);
+    transform: translateY(-2px);
+  }
+
+  .hero__center {
+    color: var(--ys-text-secondary);
+    border-color: var(--ys-border);
+  }
+
+  .hero__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ys-space-2xs);
+    margin-block-start: var(--ys-space-xl);
+    font-size: var(--ys-fs-2xs);
+    letter-spacing: var(--ys-ls-wide);
+    color: var(--ys-text-faint);
+  }
+
+  .hero__meta span[aria-hidden='true'] {
+    color: var(--ys-border-strong);
+  }
+
+  @keyframes ys-scan-sweep {
+    0% {
+      translate: 0 -8vh;
+      opacity: 0;
+    }
+    10% {
+      opacity: 0.45;
+    }
+    52% {
+      opacity: 0.18;
+    }
+    68%,
+    100% {
+      translate: 0 74vh;
+      opacity: 0;
+    }
+  }
+
+  @media (max-width: 380px) {
+    /* 极窄屏去掉两侧装饰线，避免「梦澄博客」被挤成两行 */
+    .hero__name-zh {
+      gap: 0;
+      padding-inline-start: var(--ys-ls-cinematic);
+      font-size: var(--ys-fs-3xl);
+      letter-spacing: 0.12em;
+    }
+
+    .hero__name-zh::before,
+    .hero__name-zh::after {
+      display: none;
+    }
+  }
+
+  @media (max-width: 767px) {
+    .hero {
+      min-block-size: 92svh;
+    }
+
+    .hero__lede {
+      font-size: var(--ys-fs-sm);
+    }
+
+    .hero__actions {
+      flex-direction: column;
+      gap: var(--ys-space-sm);
+    }
+
+    .hero__hud {
+      display: none;
+    }
+
+    .hero__name-zh {
+      gap: var(--ys-space-sm);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero__scan {
+      animation: none;
+      opacity: 0;
+    }
+  }
+</style>
+
+<script>
+  function initHeroSpotlight() {
+    const hero = document.querySelector<HTMLElement>('[data-hero]');
+    if (!hero) return;
+
+    const targets = Array.from(hero.querySelectorAll<HTMLElement>('[data-spotlight]'));
+    if (targets.length === 0) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    let frame = 0;
+    let x = 0;
+    let y = 0;
+
+    const paint = () => {
+      frame = 0;
+      for (const el of targets) {
+        const rect = el.getBoundingClientRect();
+        el.style.setProperty('--mx', `${x - rect.left}px`);
+        el.style.setProperty('--my', `${y - rect.top}px`);
+      }
+    };
+
+    const reset = () => {
+      if (frame) {
+        cancelAnimationFrame(frame);
+        frame = 0;
+      }
+      for (const el of targets) {
+        el.style.setProperty('--mx', '50%');
+        el.style.setProperty('--my', '50%');
+      }
+    };
+
+    hero.addEventListener(
+      'pointermove',
+      (event) => {
+        x = event.clientX;
+        y = event.clientY;
+        if (!frame) frame = requestAnimationFrame(paint);
+      },
+      { passive: true },
+    );
+
+    hero.addEventListener('pointerleave', reset);
+  }
+
+  initHeroSpotlight();
+</script>

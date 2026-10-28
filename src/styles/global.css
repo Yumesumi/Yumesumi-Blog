@@ -1,33 +1,11 @@
-/* ============================================
-   设计令牌 + 基础重置
-   颜色变量在 theme.css 中定义
-   ============================================ */
+/**
+ * 梦澄博客 · 全局基础样式
+ *
+ * 职责：reset、排版默认值、通用工具类、焦点样式与无障碍支持。
+ * 设计令牌全部来自 tokens.css，组件样式写在各自的 .astro 文件内。
+ */
 
-:root {
-  /* 字体 */
-  --font-sans: system-ui, -apple-system, 'Segoe UI', 'PingFang SC',
-    'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas,
-    'Liberation Mono', monospace;
-
-  /* 尺寸 */
-  --max-width: 46rem;
-  --radius: 12px;
-  --radius-sm: 8px;
-
-  /* 间距 */
-  --space-1: 0.25rem;
-  --space-2: 0.5rem;
-  --space-4: 1rem;
-  --space-5: 1.5rem;
-  --space-6: 2rem;
-  --space-7: 3rem;
-  --space-8: 4rem;
-
-  --transition: 200ms ease;
-}
-
-/* ---------- 重置 ---------- */
+@import './tokens.css';
 
 *,
 *::before,
@@ -40,104 +18,42 @@
 }
 
 html {
-  scroll-behavior: smooth;
-  /* 锚点跳转时给固定头部留出空间 */
-  scroll-padding-top: 5rem;
   -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--ys-nav-height) + var(--ys-space-sm));
+  background-color: var(--ys-void);
+  color-scheme: dark;
+  scrollbar-gutter: stable;
 }
 
 body {
-  font-family: var(--font-sans);
-  font-size: 1rem;
-  line-height: 1.75;
-  background: var(--bg-base);
-  color: var(--text);
   min-height: 100vh;
-  overflow-x: hidden;
-  transition: background-color var(--transition), color var(--transition);
+  min-height: 100dvh;
+  background-color: var(--ys-void);
+  color: var(--ys-text);
+  font-family: var(--ys-font-sans);
+  font-size: var(--ys-fs-md);
+  font-weight: var(--ys-weight-regular);
+  line-height: var(--ys-lh-normal);
+  letter-spacing: var(--ys-ls-normal);
+  font-synthesis-weight: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: clip;
 }
 
-img,
-picture,
-svg,
-video {
-  display: block;
-  max-width: 100%;
-  height: auto;
+main {
+  position: relative;
+  z-index: var(--ys-z-content);
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  line-height: 1.3;
-  font-weight: 600;
-  color: var(--text-strong);
-  overflow-wrap: break-word;
-}
-
-a {
-  color: var(--accent);
-  text-decoration: none;
-  transition: color var(--transition);
-}
-
-a:hover {
-  color: var(--accent-hover);
-}
-
-button {
-  font-family: inherit;
-  font-size: inherit;
-  cursor: pointer;
-  border: none;
-  background: none;
-  color: inherit;
-}
-
-code,
-kbd,
-pre,
-samp {
-  font-family: var(--font-mono);
-  font-size: 0.9em;
-}
-
-ul,
-ol {
-  padding-inline-start: 1.5rem;
-}
-
-hr {
-  border: none;
-  border-top: 1px solid var(--border);
-  margin: var(--space-6) 0;
-}
-
-::selection {
-  background: var(--accent);
-  color: var(--bg-base);
-}
-
-:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-  border-radius: 4px;
-}
-
-/* ---------- 布局容器 ---------- */
-
-.container {
-  width: 100%;
-  max-width: var(--max-width);
-  margin-inline: auto;
-  padding-inline: var(--space-5);
-}
-
-/* 无障碍：尊重系统的减少动效偏好 */
+/* 尊重系统的减少动态效果设置 */
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
   *,
   *::before,
   *::after {
@@ -146,4 +62,278 @@ hr {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* ---------- 排版 ---------- */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: var(--ys-weight-medium);
+  line-height: var(--ys-lh-snug);
+  letter-spacing: var(--ys-ls-snug);
+  text-wrap: balance;
+}
+
+p,
+li {
+  text-wrap: pretty;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img,
+svg,
+video,
+canvas {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+ul,
+ol {
+  padding: 0;
+  list-style: none;
+}
+
+strong {
+  font-weight: var(--ys-weight-semibold);
+}
+
+/* ---------- 焦点样式：键盘可见，鼠标不打扰 ---------- */
+
+:focus-visible {
+  outline: 2px solid var(--ys-accent);
+  outline-offset: 3px;
+  border-radius: var(--ys-radius-xs);
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ---------- 选中文本 ---------- */
+
+::selection {
+  background-color: var(--ys-purple);
+  color: var(--ys-text);
+}
+
+/* ---------- 滚动条 ---------- */
+
+@supports (scrollbar-width: thin) {
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: var(--ys-purple-deep) var(--ys-void);
+  }
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--ys-void);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--ys-purple-deep);
+  border: 3px solid var(--ys-void);
+  border-radius: var(--ys-radius-pill);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--ys-purple);
+}
+
+/* ---------- 布局工具类 ---------- */
+
+.ys-container {
+  width: 100%;
+  max-width: var(--ys-content-width);
+  margin-inline: auto;
+  padding-inline: var(--ys-gutter);
+}
+
+.ys-container--narrow {
+  max-width: var(--ys-content-narrow);
+}
+
+.ys-container--wide {
+  max-width: var(--ys-content-wide);
+}
+
+.ys-section {
+  padding-block: var(--ys-section-pad);
+}
+
+.ys-page {
+  padding-block: calc(var(--ys-nav-height) + var(--ys-space-2xl)) var(--ys-space-3xl);
+}
+
+/* ---------- 通用文字样式 ---------- */
+
+.ys-eyebrow {
+  font-size: var(--ys-fs-2xs);
+  font-weight: var(--ys-weight-medium);
+  letter-spacing: var(--ys-ls-wider);
+  text-transform: uppercase;
+  color: var(--ys-text-muted);
+}
+
+.ys-lede {
+  font-size: var(--ys-fs-lg);
+  line-height: var(--ys-lh-relaxed);
+  color: var(--ys-text-secondary);
+}
+
+/* ---------- 按钮 ---------- */
+
+.ys-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ys-space-2xs);
+  padding: 0.62rem 1.15rem;
+  font-size: var(--ys-fs-xs);
+  font-weight: var(--ys-weight-medium);
+  letter-spacing: var(--ys-ls-wide);
+  color: var(--ys-text);
+  background-color: color-mix(in srgb, var(--ys-surface) 72%, transparent);
+  border: 1px solid var(--ys-border-strong);
+  border-radius: var(--ys-radius-pill);
+  white-space: nowrap;
+  transition:
+    color var(--ys-dur-fast) var(--ys-ease-out),
+    background-color var(--ys-dur-fast) var(--ys-ease-out),
+    border-color var(--ys-dur-fast) var(--ys-ease-out),
+    transform var(--ys-dur-fast) var(--ys-ease-out);
+}
+
+.ys-button:hover,
+.ys-button:focus-visible {
+  color: var(--ys-text);
+  background-color: color-mix(in srgb, var(--ys-purple-deep) 48%, transparent);
+  border-color: var(--ys-border-strong);
+  transform: translateY(-1px);
+}
+
+.ys-button--primary {
+  color: var(--ys-text-inverse);
+  background-color: var(--ys-lavender);
+  border-color: var(--ys-lavender);
+}
+
+.ys-button--primary:hover,
+.ys-button--primary:focus-visible {
+  color: var(--ys-text-inverse);
+  background-color: var(--ys-lavender-soft);
+  border-color: var(--ys-lavender-soft);
+}
+
+.ys-button svg {
+  inline-size: 0.9rem;
+  block-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+/* ---------- 卡片 ---------- */
+
+.ys-card {
+  position: relative;
+  background-color: color-mix(in srgb, var(--ys-night) 76%, transparent);
+  border: 1px solid var(--ys-border);
+  border-radius: var(--ys-radius-lg);
+  transition:
+    border-color var(--ys-dur-base) var(--ys-ease-out),
+    background-color var(--ys-dur-base) var(--ys-ease-out),
+    transform var(--ys-dur-base) var(--ys-ease-out);
+}
+
+.ys-card:hover {
+  border-color: var(--ys-border-strong);
+  background-color: color-mix(in srgb, var(--ys-deep) 82%, transparent);
+}
+
+/* ---------- 页面标题区 ---------- */
+
+.ys-page-head {
+  display: grid;
+  gap: var(--ys-space-sm);
+  max-inline-size: var(--ys-reading-width);
+  margin-block-end: var(--ys-space-2xl);
+}
+
+.ys-page-head__title {
+  font-size: var(--ys-fs-3xl);
+  font-weight: var(--ys-weight-thin);
+  line-height: var(--ys-lh-tight);
+  letter-spacing: var(--ys-ls-tight);
+}
+
+.ys-page-head__desc {
+  color: var(--ys-text-secondary);
+  font-size: var(--ys-fs-md);
+  line-height: var(--ys-lh-relaxed);
+}
+
+/* ---------- 分隔线 ---------- */
+
+.ys-rule {
+  block-size: 1px;
+  border: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--ys-lavender) 26%, transparent) 16%,
+    color-mix(in srgb, var(--ys-lavender) 48%, transparent) 50%,
+    color-mix(in srgb, var(--ys-lavender) 26%, transparent) 84%,
+    transparent 100%
+  );
+}
+
+/* 仅供屏幕阅读器读取 */
+.ys-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* 键盘用户跳转链接 */
+.ys-skip-link {
+  position: absolute;
+  top: var(--ys-space-2xs);
+  left: var(--ys-space-2xs);
+  z-index: var(--ys-z-modal);
+  padding: var(--ys-space-2xs) var(--ys-space-sm);
+  background-color: var(--ys-elevated);
+  color: var(--ys-text);
+  border: 1px solid var(--ys-border-strong);
+  border-radius: var(--ys-radius-sm);
+  transform: translateY(-200%);
+  transition: transform var(--ys-dur-fast) var(--ys-ease-out);
+}
+
+.ys-skip-link:focus-visible {
+  transform: translateY(0);
 }

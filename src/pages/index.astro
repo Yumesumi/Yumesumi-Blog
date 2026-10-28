@@ -1,61 +1,291 @@
 ---
-import { getPublishedPostsPinnedFirst } from '../lib/posts';
-import BaseLayout from '../layouts/BaseLayout.astro';
-import PostCard from '../components/PostCard.astro';
+import { getPublishedPostsPinnedFirst, countTags, tagPath } from '@/lib/posts';
+import { CENTER_NAME, CENTER_URL, SITE_DESCRIPTION, SITE_NAME } from '@/lib/site';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Hero from '@/components/ui/Hero.astro';
+import PostCard from '@/components/blog/PostCard.astro';
 
 const posts = await getPublishedPostsPinnedFirst();
+const tags = countTags(posts);
+const topTags = [...tags.entries()].slice(0, 8);
+const latestDate =
+  posts.length > 0
+    ? new Date(Math.max(...posts.map((post) => post.data.date.getTime())))
+    : undefined;
 ---
 
-<BaseLayout title="梦澄博客" description="梦澄的个人博客，记录技术笔记、阅读与思考。">
-  <div class="container">
-    <header class="home__intro">
-      <h1 class="home__title">梦澄博客</h1>
-      <p class="home__subtitle">记录 · 思考 · 分享</p>
-    </header>
+<BaseLayout title={SITE_NAME} description={SITE_DESCRIPTION}>
+  <Hero postCount={posts.length} tagCount={tags.size} latestDate={latestDate} />
 
-    {
-      posts.length > 0 ? (
-        <div class="home__list">
-          {posts.map((post) => (
-            <PostCard post={post} />
+  <section class="home-section" id="writings">
+    <div class="ys-container ys-container--wide">
+      <div class="section-head">
+        <div class="section-head__text">
+          <p class="ys-eyebrow">WRITINGS</p>
+          <h2 class="section-head__title">文章</h2>
+          <p class="section-head__desc">
+            置顶优先，其余按发布时间倒序。技术笔记、阅读与思考，以及偶尔的随手记录。
+          </p>
+        </div>
+
+        <a class="section-head__link" href="/tags/">
+          <span>全部标签</span>
+          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+            <path
+              d="M5 12h14M13 6l6 6-6 6"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            ></path>
+          </svg>
+        </a>
+      </div>
+
+      {posts.length > 0 ? (
+        <div class="post-list">
+          {posts.map((post, index) => (
+            <PostCard post={post} index={index} />
           ))}
         </div>
       ) : (
-        <p class="home__empty">还没有已发布的文章。</p>
-      )
-    }
-  </div>
+        <p class="home-empty">还没有已发布的文章。</p>
+      )}
+    </div>
+  </section>
+
+  {topTags.length > 0 && (
+    <section class="home-section">
+      <div class="ys-container ys-container--wide">
+        <div class="section-head">
+          <div class="section-head__text">
+            <p class="ys-eyebrow">TOPICS</p>
+            <h2 class="section-head__title">主题</h2>
+            <p class="section-head__desc">按标签进入不同的阅读方向。</p>
+          </div>
+        </div>
+
+        <div class="topic-grid">
+          {topTags.map(([tag, count], index) => (
+            <a class="topic-card ys-card" href={tagPath(tag)}>
+              <span class="topic-card__index" aria-hidden="true">
+                {String(index + 1).padStart(2, '0')}
+              </span>
+              <span class="topic-card__name">{tag}</span>
+              <span class="topic-card__count">{count} 篇</span>
+              <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+                <path
+                  d="M5 12h14M13 6l6 6-6 6"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.4"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <section class="home-section">
+    <div class="ys-container ys-container--wide">
+      <div class="center-cta ys-card">
+        <div class="center-cta__text">
+          <p class="ys-eyebrow">YUMESUMI CENTER</p>
+          <h2 class="center-cta__title">这里是梦澄博客</h2>
+          <p class="center-cta__desc">
+            博客只是梦澄项目群的一部分。想了解全部板块，前往{CENTER_NAME}。
+          </p>
+        </div>
+
+        <a
+          class="ys-button ys-button--primary"
+          href={CENTER_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <span>前往{CENTER_NAME}</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M7 17 17 7M9 7h8v8"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            ></path>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </section>
 </BaseLayout>
 
 <style>
-  .home__intro {
-    margin-bottom: var(--space-7);
+  .home-section {
+    position: relative;
+    padding-block: var(--ys-section-pad);
   }
 
-  .home__title {
-    font-size: 2rem;
-    margin: 0 0 0.35rem;
-    letter-spacing: 0.02em;
+  .home-section + .home-section::before {
+    content: '';
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline: var(--ys-gutter);
+    block-size: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      color-mix(in srgb, var(--ys-lavender) 16%, transparent) 12%,
+      color-mix(in srgb, var(--ys-lavender) 34%, transparent) 50%,
+      color-mix(in srgb, var(--ys-lavender) 16%, transparent) 88%,
+      transparent 100%
+    );
+    pointer-events: none;
   }
 
-  .home__subtitle {
-    margin: 0;
-    color: var(--text-muted);
-    font-size: 0.9375rem;
-  }
-
-  .home__list {
+  .section-head {
     display: flex;
-    flex-direction: column;
-    gap: var(--space-4);
+    flex-wrap: wrap;
+    align-items: end;
+    justify-content: space-between;
+    gap: var(--ys-space-md);
+    margin-block-end: var(--ys-space-xl);
   }
 
-  .home__empty {
-    padding: var(--space-6);
+  .section-head__text {
+    display: grid;
+    gap: var(--ys-space-2xs);
+  }
+
+  .section-head__title {
+    font-size: var(--ys-fs-2xl);
+    font-weight: var(--ys-weight-light);
+    letter-spacing: var(--ys-ls-snug);
+  }
+
+  .section-head__desc {
+    color: var(--ys-text-muted);
+    font-size: var(--ys-fs-sm);
+  }
+
+  .section-head__link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ys-space-2xs);
+    padding-block-end: var(--ys-space-3xs);
+    font-size: var(--ys-fs-2xs);
+    letter-spacing: var(--ys-ls-wide);
+    color: var(--ys-text-muted);
+    border-block-end: 1px solid var(--ys-border);
+    transition:
+      color var(--ys-dur-fast) var(--ys-ease-out),
+      border-color var(--ys-dur-fast) var(--ys-ease-out);
+  }
+
+  .section-head__link:hover,
+  .section-head__link:focus-visible {
+    color: var(--ys-lavender);
+    border-color: var(--ys-lavender);
+  }
+
+  .post-list {
+    display: grid;
+    gap: var(--ys-space-sm);
+  }
+
+  .home-empty {
+    padding: var(--ys-space-2xl);
     text-align: center;
-    color: var(--text-muted);
-    background: var(--surface);
-    border: 1px dashed var(--border);
-    border-radius: var(--radius);
+    color: var(--ys-text-muted);
+    border: 1px dashed var(--ys-border);
+    border-radius: var(--ys-radius-lg);
+  }
+
+  .topic-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+    gap: var(--ys-space-sm);
+  }
+
+  .topic-card {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: var(--ys-space-2xs) var(--ys-space-sm);
+    padding: var(--ys-space-md);
+  }
+
+  .topic-card:hover {
+    transform: translateY(-2px);
+  }
+
+  .topic-card__index {
+    font-size: var(--ys-fs-3xs);
+    letter-spacing: var(--ys-ls-wide);
+    color: var(--ys-text-faint);
+  }
+
+  .topic-card__name {
+    grid-column: 1;
+    font-size: var(--ys-fs-lg);
+    font-weight: var(--ys-weight-light);
+    color: var(--ys-text-secondary);
+  }
+
+  .topic-card__count {
+    grid-column: 1;
+    font-size: var(--ys-fs-2xs);
+    color: var(--ys-text-faint);
+  }
+
+  .topic-card > svg {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    color: var(--ys-text-faint);
+    transition:
+      color var(--ys-dur-fast) var(--ys-ease-out),
+      transform var(--ys-dur-fast) var(--ys-ease-out);
+  }
+
+  .topic-card:hover .topic-card__name,
+  .topic-card:focus-visible .topic-card__name {
+    color: var(--ys-text);
+  }
+
+  .topic-card:hover > svg {
+    color: var(--ys-lavender);
+    transform: translateX(3px);
+  }
+
+  .center-cta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ys-space-lg);
+    padding: clamp(1.5rem, 4vw, 3rem);
+    background-color: color-mix(in srgb, var(--ys-deep) 74%, transparent);
+  }
+
+  .center-cta__text {
+    display: grid;
+    gap: var(--ys-space-2xs);
+    max-inline-size: 34rem;
+  }
+
+  .center-cta__title {
+    font-size: var(--ys-fs-xl);
+    font-weight: var(--ys-weight-light);
+  }
+
+  .center-cta__desc {
+    color: var(--ys-text-muted);
+    font-size: var(--ys-fs-sm);
+    line-height: var(--ys-lh-relaxed);
   }
 </style>

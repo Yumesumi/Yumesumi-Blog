@@ -1,16 +1,17 @@
 ---
-import type { Post } from '../../lib/posts';
-import { getPublishedPosts, countTags } from '../../lib/posts';
-import BaseLayout from '../../layouts/BaseLayout.astro';
-import PostCard from '../../components/PostCard.astro';
-import TagPill from '../../components/TagPill.astro';
+import type { Post } from '@/lib/posts';
+import { getPublishedPosts, countTags } from '@/lib/posts';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import PageHeader from '@/components/ui/PageHeader.astro';
+import PostCard from '@/components/blog/PostCard.astro';
+import TagPill from '@/components/blog/TagPill.astro';
 
 export async function getStaticPaths() {
   const posts = await getPublishedPosts();
 
   return [...countTags(posts).keys()].map((tag) => ({
     // params 传原始值即可，Astro 会自行编码。
-    // 这里若再手动 encodeURIComponent 会造成双重编码，导致路径匹配不上。
+    // 手动 encodeURIComponent 会造成双重编码，导致路径匹配不上。
     params: { tag },
     props: { posts: posts.filter((post) => post.data.tags.includes(tag)) },
   }));
@@ -26,51 +27,62 @@ const tagName = Astro.params.tag ?? '';
 ---
 
 <BaseLayout title={`标签：${tagName}`} description={`梦澄博客中标签为「${tagName}」的文章。`}>
-  <div class="container">
-    <a href="/tags/" class="tag-page__back">← 返回标签列表</a>
+  <div class="ys-page ys-container ys-container--wide">
+    <a class="back-link" href="/tags/">
+      <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+        <path
+          d="M19 12H5M11 6l-6 6 6 6"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        ></path>
+      </svg>
+      <span>返回标签列表</span>
+    </a>
 
-    <header class="tag-page__header">
-      <h1 class="tag-page__title">
+    <PageHeader
+      eyebrow="TAG"
+      title={tagName}
+      description={`共 ${posts.length} 篇文章归入这个标签。`}
+    >
+      <div class="tag-page__pill">
         <TagPill tag={tagName} count={posts.length} active />
-      </h1>
-      <p class="tag-page__count">共 {posts.length} 篇文章</p>
-    </header>
+      </div>
+    </PageHeader>
 
     <div class="tag-page__list">
-      {posts.map((post) => <PostCard post={post} />)}
+      {posts.map((post, index) => (
+        <PostCard post={post} index={index} />
+      ))}
     </div>
   </div>
 </BaseLayout>
 
 <style>
-  .tag-page__back {
-    display: inline-block;
-    margin-bottom: var(--space-5);
-    font-size: 0.875rem;
-    color: var(--text-muted);
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--ys-space-2xs);
+    margin-block-end: var(--ys-space-xl);
+    font-size: var(--ys-fs-2xs);
+    letter-spacing: var(--ys-ls-wide);
+    color: var(--ys-text-muted);
+    transition: color var(--ys-dur-fast) var(--ys-ease-out);
   }
 
-  .tag-page__back:hover {
-    color: var(--accent);
+  .back-link:hover,
+  .back-link:focus-visible {
+    color: var(--ys-lavender);
   }
 
-  .tag-page__header {
-    margin-bottom: var(--space-6);
-  }
-
-  .tag-page__title {
-    margin: 0 0 0.5rem;
-  }
-
-  .tag-page__count {
-    margin: 0;
-    color: var(--text-muted);
-    font-size: 0.9375rem;
+  .tag-page__pill {
+    margin-block-start: var(--ys-space-sm);
   }
 
   .tag-page__list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4);
+    display: grid;
+    gap: var(--ys-space-sm);
   }
 </style>

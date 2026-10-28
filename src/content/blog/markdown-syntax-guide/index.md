@@ -132,7 +132,7 @@ function sortByDate(posts: Post[]): Post[] {
 
 行内链接用方括号加圆括号：[访问 Astro 官网](https://astro.build/)
 
-也可以只写链接地址：<https://yumesumi.cyou>
+也可以只写链接地址：<https://blog.yumesumi.cyou>
 
 ## 图片
 

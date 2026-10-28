@@ -1,96 +1,112 @@
 ---
-import { getPublishedPosts, countTags, tagPath } from '../../lib/posts';
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getPublishedPosts, countTags, tagPath } from '@/lib/posts';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import PageHeader from '@/components/ui/PageHeader.astro';
 
 const posts = await getPublishedPosts();
 const tags = countTags(posts);
-const maxCount = tags.size > 0 ? Math.max(...tags.values()) : 1;
 ---
 
 <BaseLayout title="标签" description="按标签浏览梦澄博客的全部文章。">
-  <div class="container">
-    <header class="tags__header">
-      <h1 class="tags__title">标签</h1>
-      <p class="tags__subtitle">共 {tags.size} 个标签 · {posts.length} 篇文章</p>
-    </header>
+  <div class="ys-page ys-container ys-container--wide">
+    <PageHeader
+      eyebrow="INDEX"
+      title="标签索引"
+      description={`共 ${tags.size} 个标签 · ${posts.length} 篇文章。按主题进入不同的阅读方向。`}
+    />
 
-    {
-      tags.size > 0 ? (
-        <div class="tags__cloud">
-          {[...tags].map(([tag, count]) => (
-            <a
-              href={tagPath(tag)}
-              class="tag-cloud__item"
-              style={`--weight: ${0.85 + (count / maxCount) * 0.55};`}
-            >
-              <span>{tag}</span>
-              <span class="tag-cloud__count">{count}</span>
-            </a>
-          ))}
-        </div>
-      ) : (
-        <p class="tags__empty">还没有任何标签。</p>
-      )
-    }
+    {tags.size > 0 ? (
+      <div class="tag-grid">
+        {[...tags].map(([tag, count], index) => (
+          <a class="tag-card ys-card" href={tagPath(tag)}>
+            <span class="tag-card__index" aria-hidden="true">
+              {String(index + 1).padStart(2, '0')}
+            </span>
+            <span class="tag-card__name">{tag}</span>
+            <span class="tag-card__count">{count} 篇文章</span>
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+              <path
+                d="M5 12h14M13 6l6 6-6 6"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.4"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </a>
+        ))}
+      </div>
+    ) : (
+      <p class="tags-empty">还没有任何标签。</p>
+    )}
   </div>
 </BaseLayout>
 
 <style>
-  .tags__header {
-    margin-bottom: var(--space-6);
+  .tag-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+    gap: var(--ys-space-sm);
   }
 
-  .tags__title {
-    font-size: 1.75rem;
-    margin: 0 0 0.35rem;
+  .tag-card {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: var(--ys-space-2xs) var(--ys-space-sm);
+    padding: var(--ys-space-lg);
   }
 
-  .tags__subtitle {
-    margin: 0;
-    color: var(--text-muted);
-    font-size: 0.9375rem;
-  }
-
-  .tags__cloud {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.7rem;
-  }
-
-  /* 文章数越多的标签字号越大 */
-  .tag-cloud__item {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 0.45em;
-    padding: 0.5em 1.1em;
-    font-size: calc(0.9375rem * var(--weight));
-    color: var(--text-muted);
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    transition: color var(--transition), border-color var(--transition),
-      background-color var(--transition), transform var(--transition);
-  }
-
-  .tag-cloud__item:hover {
-    color: var(--accent);
-    border-color: var(--accent);
-    background: color-mix(in srgb, var(--accent) 10%, transparent);
+  .tag-card:hover {
     transform: translateY(-2px);
   }
 
-  .tag-cloud__count {
-    font-size: 0.75em;
-    font-variant-numeric: tabular-nums;
-    opacity: 0.7;
+  .tag-card__index {
+    grid-column: 1;
+    font-size: var(--ys-fs-3xs);
+    letter-spacing: var(--ys-ls-wide);
+    color: var(--ys-text-faint);
   }
 
-  .tags__empty {
-    padding: var(--space-6);
+  .tag-card__name {
+    grid-column: 1;
+    font-size: var(--ys-fs-xl);
+    font-weight: var(--ys-weight-light);
+    color: var(--ys-text-secondary);
+    transition: color var(--ys-dur-fast) var(--ys-ease-out);
+  }
+
+  .tag-card__count {
+    grid-column: 1;
+    font-size: var(--ys-fs-2xs);
+    color: var(--ys-text-faint);
+  }
+
+  .tag-card > svg {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    color: var(--ys-text-faint);
+    transition:
+      color var(--ys-dur-fast) var(--ys-ease-out),
+      transform var(--ys-dur-fast) var(--ys-ease-out);
+  }
+
+  .tag-card:hover .tag-card__name,
+  .tag-card:focus-visible .tag-card__name {
+    color: var(--ys-text);
+  }
+
+  .tag-card:hover > svg {
+    color: var(--ys-lavender);
+    transform: translateX(3px);
+  }
+
+  .tags-empty {
+    padding: var(--ys-space-2xl);
     text-align: center;
-    color: var(--text-muted);
-    background: var(--surface);
-    border: 1px dashed var(--border);
-    border-radius: var(--radius);
+    color: var(--ys-text-muted);
+    border: 1px dashed var(--ys-border);
+    border-radius: var(--ys-radius-lg);
   }
 </style>

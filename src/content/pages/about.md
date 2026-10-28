@@ -36,9 +36,9 @@ description: 关于梦澄博客 —— 记录技术笔记、阅读与思考，�
 
 ## 关于这个网站
 
-这个博客是用 [Astro](https://astro.build/) 搭建的静态站点，托管在 GitHub Pages 上，域名是 `yumesumi.cyou`。
+这个博客是用 [Astro](https://astro.build/) 搭建的静态站点，托管在 GitHub Pages 上，域名是 `blog.yumesumi.cyou`。
 
-技术细节可以看 [这个博客是怎么搭起来的](/blog/astro-notes/)。
+它是 [梦澄中心](https://yumesumi.cyou/) 的一部分。技术细节可以看 [这个博客是怎么搭起来的](/blog/astro-notes/)。
 
 ---
 

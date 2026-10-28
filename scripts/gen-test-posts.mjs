@@ -403,16 +403,15 @@ async function generate() {
 
     // date 单独处理：给成递增日期，让排序可预期
     const day = String((i % 28) + 1).padStart(2, '0');
-    const content = buildContent(post).replace(
-      /^---$/m,
-      `---\ndate: 2026-11-${day}`,
-    );
+    const content = buildContent(post).replace(/^---$/m, `---\ndate: 2026-11-${day}`);
 
     await writeFile(join(dir, 'index.md'), content, 'utf8');
   }
 
   console.log(`已生成 ${POSTS.length} 篇：`);
-  console.log(`  目录：${BLOG_DIR}/${PREFIX}01 … ${PREFIX}${String(POSTS.length).padStart(2, '0')}`);
+  console.log(
+    `  目录：${BLOG_DIR}/${PREFIX}01 … ${PREFIX}${String(POSTS.length).padStart(2, '0')}`,
+  );
   console.log('');
   console.log('清理方式：node scripts/gen-test-posts.mjs --clean');
 }

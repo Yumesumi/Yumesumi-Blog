@@ -1,0 +1,94 @@
+---
+/**
+ * 回到顶部按钮。滚动超过阈值后出现。
+ */
+---
+
+<button class="back-to-top" type="button" data-back-to-top aria-label="回到顶部" hidden>
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.6"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M12 19V5M5 12l7-7 7 7"></path>
+  </svg>
+</button>
+
+<script>
+  const SHOW_AFTER = 480;
+
+  function initBackToTop() {
+    const button = document.querySelector<HTMLElement>('[data-back-to-top]');
+    if (!button) return;
+
+    let ticking = false;
+
+    const update = () => {
+      button.hidden = window.scrollY <= SHOW_AFTER;
+      ticking = false;
+    };
+
+    window.addEventListener(
+      'scroll',
+      () => {
+        if (!ticking) {
+          ticking = true;
+          window.requestAnimationFrame(update);
+        }
+      },
+      { passive: true },
+    );
+
+    button.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    update();
+  }
+
+  initBackToTop();
+</script>
+
+<style>
+  .back-to-top {
+    position: fixed;
+    right: var(--ys-space-md);
+    bottom: var(--ys-space-md);
+    z-index: var(--ys-z-overlay);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 2.7rem;
+    block-size: 2.7rem;
+    border-radius: 50%;
+    color: var(--ys-text-muted);
+    background-color: color-mix(in srgb, var(--ys-surface) 82%, transparent);
+    border: 1px solid var(--ys-border);
+    box-shadow: var(--ys-shadow-md);
+    backdrop-filter: blur(12px);
+    transition:
+      color var(--ys-dur-fast) var(--ys-ease-out),
+      border-color var(--ys-dur-fast) var(--ys-ease-out),
+      transform var(--ys-dur-fast) var(--ys-ease-out);
+  }
+
+  .back-to-top[hidden] {
+    display: none;
+  }
+
+  .back-to-top:hover,
+  .back-to-top:focus-visible {
+    color: var(--ys-lavender);
+    border-color: var(--ys-border-strong);
+    transform: translateY(-2px);
+  }
+
+  .back-to-top svg {
+    inline-size: 1.1rem;
+    block-size: 1.1rem;
+  }
+</style>

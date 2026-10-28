@@ -1,140 +1,98 @@
-# 强制 HTTPS 配置
+# 强制 HTTPS 配置（博客子域名）
 
-> ✅ **已于 2026-10-03 配置完成并验证通过。**
-> 最终只开了 Cloudflare 一层，GitHub 侧的 Enforce HTTPS **保持关闭**（原因见下）。
-
-`http://yumesumi.cyou` 现在会 301 跳转到 https，浏览器地址栏不再提示不安全。
+站点：**https://blog.yumesumi.cyou/**
+根域 `yumesumi.cyou` 属于梦澄中心，本文只讨论博客子域名。
 
 ---
 
-## 最终配置：只开 Cloudflare 一层
+## 目标配置
 
-**Cloudflare → SSL/TLS → 边缘证书 → 始终使用 HTTPS：开**
-**GitHub Settings → Pages → Enforce HTTPS：关**（保持默认）
+| 位置 | 设置 |
+| --- | --- |
+| Cloudflare → SSL/TLS → 概述 → 加密模式 | **完全（Full）** |
+| Cloudflare → SSL/TLS → 边缘证书 → 始终使用 HTTPS | **开启** |
+| GitHub → Settings → Pages → Enforce HTTPS | **保持关闭** |
 
-### 为什么不在 GitHub 侧也开
+### 为什么 GitHub 侧保持关闭
 
-Cloudflare 的开关提示里写了：
-
-> 启用此功能时，如果 Origin 也强制 HTTPS 重定向，可能会导致重定向循环。
-
-实测印证了这个风险。GitHub Pages 对 `http://yumesumi.github.io/Yumesumi-Blog/`
-的跳转目标是 **`http://yumesumi.cyou/`**（http，不是 https），
-如果 GitHub 侧再强制 https，两边规则叠加容易产生 `ERR_TOO_MANY_REDIRECTS`。
-
-只开 Cloudflare 一层时，实际跳转链路是：
+Cloudflare 的开关提示里写了：如果 Origin 也强制 HTTPS 重定向，
+可能导致重定向循环。博客的域名解析经过 Cloudflare 橙云，
+GitHub Pages 对 HTTP 请求的跳转目标由 Cloudflare 处理；
+只保留 Cloudflare 一层时链路是单向收敛的：
 
 ```text
-http://yumesumi.github.io/Yumesumi-Blog/   (GitHub 301)
-  → http://yumesumi.cyou/                  (Cloudflare 301)
-    → https://yumesumi.cyou/               (200 ✓)
+http://blog.yumesumi.cyou/          (Cloudflare 301)
+  → https://blog.yumesumi.cyou/    (200 ✓)
 ```
 
-每跳只前进一步，收敛正常，不会循环。
+### 为什么 SSL 模式必须是「完全（Full）」
 
-### 安全性说明
+GitHub Pages 的证书由 Let's Encrypt 签发，有效期 90 天。
+Cloudflare 橙云代理会挡住 GitHub 的证书续期验证：
 
-不勾 GitHub 那层唯一的理论缺口是：有人直连
-`http://yumesumi.github.io/Yumesumi-Blog/` 时，第一跳落在 http 上。
-但因为主域名的 Cloudflare 开关会把 http 拉回 https，
-实际仍然不会以明文形式呈现内容。个人博客场景下这个取舍是合理的，
-也少了一个将来可能出问题的地方。
-
----
-
-## 已验证的跳转行为
-
-```text
-http://yumesumi.cyou/                      → 301 → https://yumesumi.cyou/
-http://yumesumi.cyou/blog/hello-world/     → 301 → https://yumesumi.cyou/blog/hello-world/
-http://yumesumi.cyou/tags/                 → 301 → https://yumesumi.cyou/tags/
-http://yumesumi.github.io/Yumesumi-Blog/   → 301 → http://yumesumi.cyou/ → 301 → https://... （200）
-```
-
-路径在跳转中完整保留，中文路径（`/tags/`）也正常。
-
----
-
-## 代码侧的补充措施
-
-`src/layouts/BaseLayout.astro` 的 `<head>` 里有：
-
-```html
-<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
-```
-
-浏览器会把它加载到的 HTTP 资源自动升级为 HTTPS，避免混合内容警告。
-
-> 注意：这个 meta **不能**替代地址栏跳转。用户自己输 `http://` 时，
-> 浏览器仍会先请求 http 页面 —— 真正的 301 只能由服务端发出。
+- **完全（严格）**：约 90 天后证书续期失败，Cloudflare 返回 526，站点打不开
+- **完全（Full）**：到源站走 HTTPS 但不校验证书有效性，续期失败也不会导致 526
+- **灵活（Flexible）**：GitHub 会把 HTTP 301 到 HTTPS，Cloudflare 又转回来，无限重定向
 
 ---
 
 ## 验证命令
 
 ```bash
-# 1. HTTP 应该 301 到 HTTPS
-curl -sI http://yumesumi.cyou/ | grep -iE "^HTTP|^location"
-# 期望：HTTP/1.1 301  +  location: https://yumesumi.cyou/
+# 1. HTTP 应 301 到 HTTPS
+curl -sI http://blog.yumesumi.cyou/ | grep -iE "^HTTP|^location"
 
-# 2. 跟随跳转应 1 跳到位，无循环
+# 2. 跟随跳转，最终 200，跳数正常
 curl -sIL -o /dev/null -w "最终=%{url_effective} 跳数=%{num_redirects} 状态=%{http_code}\n" \
-  http://yumesumi.cyou/
-# 期望：最终=https://yumesumi.cyou/ 跳数=1 状态=200
+  http://blog.yumesumi.cyou/
 
 # 3. 证书有效（0 = 有效）
-curl -s -o /dev/null -w "%{ssl_verify_result}\n" https://yumesumi.cyou/
+curl -s -o /dev/null -w "%{ssl_verify_result}\n" https://blog.yumesumi.cyou/
+
+# 4. 请求确实到达 GitHub Pages
+curl -sI https://blog.yumesumi.cyou/ | grep -i x-github-request-id
 ```
 
 ---
 
-## 如果想改用 Redirect Rule
+## 代码侧的补充措施
 
-如果以后想用显式规则代替全局开关：
+`BaseLayout.astro` 的 `<head>` 中有：
 
-**规则 → 创建规则**，配置：
+```html
+<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+```
 
-| 字段 | 值 |
-| --- | --- |
-| 规则名称 | `Force HTTPS` |
-| 条件 | 自定义筛选表达式：`http.request.full_uri` **不包含** `https://` |
-| 操作 | **URL 重写** → 静态重写 |
-| 来源 | `concat("https://", http.host, http.request.uri.path)` |
-| 状态码 | **301 – 永久重定向** |
-
-两种方式选一个即可，**不要同时开**（会互相叠加）。
+浏览器会把页面里的 HTTP 资源自动升级为 HTTPS，避免混合内容警告。
+这个 meta **不能**替代地址栏跳转——真正的 301 只能由服务端/Cloudflare 发出。
 
 ---
 
 ## 常见问题
 
-**Q：配了 Cloudflare「始终使用 HTTPS」，浏览器还提示不安全？**
+**Q：配了「始终使用 HTTPS」，浏览器还提示不安全？**
 
-检查 SSL/TLS → 概述的加密模式：
+检查加密模式是否为「完全（Full）」。选「完全（严格）」时，
+证书续期失败会在约 3 个月后让站点报 526。
 
-| 模式 | 说明 |
-| --- | --- |
-| **完全（Full）** | ✅ 必须是这个 |
-| 完全（严格） | ⚠️ 证书续期会失败，约 3 个月后站点 526 打不开 |
-| 灵活 | ❌ 无限重定向循环 |
+**Q：博客打不开了，报 526？**
 
-**Q：配了之后博客打不开了？**
-
-大概率是加密模式被改成了「严格」而证书续期失败。
+大概率是 Cloudflare 加密模式被改成了「严格」，且 GitHub 证书续期失败。
 改回「完全（Full）」即可恢复。
 
-**Q：从 github.io 回退地址进入时，第一跳是 http，为什么没循环？**
+**Q：要不要在 GitHub Pages 也开 Enforce HTTPS？**
 
-因为 Cloudflare 会把 http 拉回 https，每跳只进一步：
+不建议。当前 Cloudflare 已经完成 HTTP → HTTPS 跳转，
+GitHub 侧再开会增加重定向循环风险。个人站点保持一层即可。
 
-```text
-http://yumesumi.github.io/Yumesumi-Blog/
-  → http://yumesumi.cyou/        (GitHub 301)
-    → https://yumesumi.cyou/     (Cloudflare 301) ✓
+---
+
+## 回访
+
+Cloudflare 橙云影响 GitHub 证书续期，建议约 3 个月后回访一次：
+
+```bash
+curl -s -o /dev/null -w "%{ssl_verify_result} %{http_code}\n" https://blog.yumesumi.cyou/
 ```
 
-**Q：以后要不要补开 GitHub 侧的 Enforce HTTPS？**
-
-不建议。当前配置已满足需求（浏览器不会以明文看到内容），
-且多开一层反而增加循环风险。个人博客场景保持现状即可。
-
+输出 `0 200` 即正常。

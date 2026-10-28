@@ -1,0 +1,37 @@
+---
+/**
+ * 内页标题区：标签、搜索、关于等页面共用。
+ */
+interface Props {
+  eyebrow: string;
+  title: string;
+  description?: string;
+}
+
+const { eyebrow, title, description } = Astro.props satisfies Props;
+---
+
+<header class="page-head ys-page-head">
+  <p class="ys-eyebrow">{eyebrow}</p>
+  <h1 class="page-head__title ys-page-head__title">{title}</h1>
+  {description && <p class="page-head__desc ys-page-head__desc">{description}</p>}
+  <slot />
+</header>
+
+<style>
+  .page-head {
+    position: relative;
+    padding-block-start: var(--ys-space-md);
+  }
+
+  .page-head::before {
+    content: '';
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    inline-size: 3rem;
+    block-size: 1px;
+    background: linear-gradient(90deg, var(--ys-lavender), transparent);
+    opacity: 0.6;
+  }
+</style>
