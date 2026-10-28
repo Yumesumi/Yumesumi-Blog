@@ -179,6 +179,7 @@
   /* ---------- 博客阅读区 ---------- */
   /* 正文面板必须始终是实色，不能使用渐变或半透明背景 */
   --ys-reading-width: 46rem;
+  --ys-reading-wide: 76rem;
   --ys-page-width: 68rem;
   --ys-prose-bg: #0b0915;
   --ys-prose-border: rgb(157 132 232 / 16%);

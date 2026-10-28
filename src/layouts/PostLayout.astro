@@ -1,9 +1,9 @@
 ---
 /**
- * 文章布局：标题信息 + 正文 + 目录侧栏 + 上一篇/下一篇 + 相关阅读。
+ * 文章布局：顶栏保持固定，正文占据页面主体，目录作为右侧粘性侧栏。
  *
- * 正文与目录是同级节点，目录不会被注入 .prose 内部，
- * 中文长文的阅读节奏不受侧栏影响。
+ * 正文与目录是同级节点，目录不会被注入 .prose 内部；
+ * 宽屏下正文铺满可用宽度，窄屏下目录折叠到正文上方。
  */
 import type { MarkdownHeading } from 'astro';
 import type { Post } from '@/lib/posts';
@@ -43,53 +43,53 @@ const hasToc = tocItems.length > 0;
   tags={tags}
   jsonLdType="BlogPosting"
 >
-  <div class="post-page ys-container">
-    <a href="/" class="post-page__back">
-      <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
-        <path
-          d="M19 12H5M11 6l-6 6 6 6"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.5"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        ></path>
-      </svg>
-      <span>返回文章列表</span>
-    </a>
+  <div class="post-page ys-container ys-container--wide">
+    <div class:list={['post-shell', { 'post-shell--no-toc': !hasToc }]}>
+      <div class="post-main">
+        <a href="/" class="post-page__back">
+          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+            <path
+              d="M19 12H5M11 6l-6 6 6 6"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            ></path>
+          </svg>
+          <span>返回文章列表</span>
+        </a>
 
-    <header class="post-head">
-      <p class="ys-eyebrow post-head__eyebrow">ARTICLE</p>
+        <header class="post-head">
+          <p class="ys-eyebrow post-head__eyebrow">ARTICLE</p>
 
-      <h1 class="post-head__title">{title}</h1>
+          <h1 class="post-head__title">{title}</h1>
 
-      {description && <p class="post-head__desc">{description}</p>}
+          {description && <p class="post-head__desc">{description}</p>}
 
-      <div class="post-head__meta">
-        <time datetime={toISO(date)}>{formatDateLong(date)}</time>
-        <span aria-hidden="true">·</span>
-        <span>约 {readingMinutes} 分钟阅读</span>
-        {pinned && <span class="post-head__badge">置顶</span>}
-      </div>
+          <div class="post-head__meta">
+            <time datetime={toISO(date)}>{formatDateLong(date)}</time>
+            <span aria-hidden="true">·</span>
+            <span>约 {readingMinutes} 分钟阅读</span>
+            {pinned && <span class="post-head__badge">置顶</span>}
+          </div>
 
-      {tags.length > 0 && (
-        <div class="post-head__tags">
-          {tags.map((tag) => (
-            <TagPill tag={tag} />
-          ))}
-        </div>
-      )}
-    </header>
+          {tags.length > 0 && (
+            <div class="post-head__tags">
+              {tags.map((tag) => (
+                <TagPill tag={tag} />
+              ))}
+            </div>
+          )}
+        </header>
 
-    {hasToc && (
-      <details class="post-toc-mobile">
-        <summary>目录</summary>
-        <TableOfContents headings={tocItems} />
-      </details>
-    )}
+        {hasToc && (
+          <details class="post-toc-mobile">
+            <summary>目录</summary>
+            <TableOfContents headings={tocItems} />
+          </details>
+        )}
 
-    <div class:list={['post-grid', { 'post-grid--no-toc': !hasToc }]}>
-      <div class="post-grid__main">
         <div class="prose">
           <slot />
         </div>
@@ -118,8 +118,8 @@ const hasToc = tocItems.length > 0;
       </div>
 
       {hasToc && (
-        <aside class="post-grid__aside">
-          <div class="post-grid__sticky">
+        <aside class="post-aside">
+          <div class="post-aside__sticky">
             <TableOfContents headings={tocItems} />
           </div>
         </aside>
@@ -132,8 +132,28 @@ const hasToc = tocItems.length > 0;
 
 <style>
   .post-page {
-    max-inline-size: var(--ys-page-width);
     padding-block: calc(var(--ys-nav-height) + var(--ys-space-xl)) var(--ys-space-3xl);
+  }
+
+  .post-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(15rem, 16vw, 18rem);
+    gap: clamp(2rem, 4vw, 4.5rem);
+    align-items: start;
+  }
+
+  .post-shell--no-toc {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .post-main {
+    min-width: 0;
+  }
+
+  /* 没有目录时不必拉满超宽屏，限制在舒适的长文宽度并居中 */
+  .post-shell--no-toc .post-main {
+    max-inline-size: var(--ys-reading-wide);
+    margin-inline: auto;
   }
 
   .post-page__back {
@@ -155,11 +175,11 @@ const hasToc = tocItems.length > 0;
   .post-head {
     display: grid;
     gap: var(--ys-space-sm);
-    max-inline-size: var(--ys-reading-width);
     margin-block-end: var(--ys-space-xl);
   }
 
   .post-head__title {
+    max-inline-size: 60rem;
     font-size: clamp(1.9rem, 1.45rem + 1.7vw, 3rem);
     font-weight: var(--ys-weight-light);
     line-height: 1.22;
@@ -168,7 +188,7 @@ const hasToc = tocItems.length > 0;
   }
 
   .post-head__desc {
-    max-inline-size: 40rem;
+    max-inline-size: 52rem;
     color: var(--ys-text-secondary);
     font-size: var(--ys-fs-md);
     line-height: var(--ys-lh-relaxed);
@@ -224,32 +244,12 @@ const hasToc = tocItems.length > 0;
     border-block-end: 1px solid var(--ys-border-subtle);
   }
 
-  .post-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 15rem;
-    gap: var(--ys-space-2xl);
-    align-items: start;
-  }
-
-  .post-grid--no-toc {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .post-grid__main {
-    min-width: 0;
-    max-inline-size: var(--ys-reading-width);
-  }
-
   /* 侧栏必须撑满整行，sticky 才有可移动的空间 */
-  .post-grid__aside {
+  .post-aside {
     align-self: stretch;
   }
 
-  .post-grid--no-toc .post-grid__main {
-    margin-inline: auto;
-  }
-
-  .post-grid__sticky {
+  .post-aside__sticky {
     position: sticky;
     top: calc(var(--ys-nav-height) + var(--ys-space-md));
     max-height: calc(100svh - var(--ys-nav-height) - var(--ys-space-xl));
@@ -304,12 +304,12 @@ const hasToc = tocItems.length > 0;
     color: var(--ys-text-secondary);
   }
 
-  @media (max-width: 63.99rem) {
-    .post-grid {
+  @media (max-width: 67.99rem) {
+    .post-shell {
       grid-template-columns: minmax(0, 1fr);
     }
 
-    .post-grid__aside {
+    .post-aside {
       display: none;
     }
 

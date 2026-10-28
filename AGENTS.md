@@ -261,6 +261,8 @@ const { post, index } = Astro.props satisfies Props;
 - 颜色、间距、字体、动效一律使用 `src/styles/tokens.css` 的 `--ys-*` 变量
 - 新增令牌前先 grep 确认没有同名未使用的
 - `.prose` 不能有渐变/背景图/backdrop-filter
+- 文章页是「宽正文 + 右侧粘性目录」：`post-shell` 用
+  `minmax(0, 1fr) clamp(15rem, 16vw, 18rem)`，**不要**再把正文锁成 46rem 窄栏
 - 环境层（`HomeAmbience`）是 `position: fixed; z-index: 0`，
   页面内容在 `main`（z-index 10）里；正文面板用实色
 - 尊重 `prefers-reduced-motion`：新增动画时补降级

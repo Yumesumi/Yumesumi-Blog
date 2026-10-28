@@ -10,9 +10,10 @@
   background-color: var(--ys-prose-bg);
   border: 1px solid var(--ys-prose-border);
   border-radius: var(--ys-radius-xl);
-  padding: clamp(1.35rem, 3.4vw, 3rem);
-  font-size: 1.0625rem;
-  line-height: 1.9;
+  padding: clamp(1.5rem, 3.2vw, 3.75rem);
+  /* 宽正文下适当放大字号，避免超长行影响阅读 */
+  font-size: clamp(1.0625rem, 0.95rem + 0.3vw, 1.25rem);
+  line-height: 1.95;
   letter-spacing: 0.01em;
   color: var(--ys-text);
   overflow-wrap: break-word;
